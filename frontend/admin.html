@@ -1,0 +1,2029 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Quản trị — Bụi Records</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* Same palette and type as the shop, so the two feel like one product. */
+    :root {
+      --bg: #121214; --surface: #1E1E22; --surface-alt: #18181B;
+      --text: #F4F4F5; --muted: #A1A1AA; --line: #27272A; --line-strong: #3F3F46;
+      --accent: #FF5500; --accent-hover: #FF7A33; --on-accent: #121214;
+      --out: #F87171; --low: #FF8A4C; --scrim: rgba(0, 0, 0, .62);
+      --ok: #4ADE80; --info: #7DB4FF;
+      color-scheme: dark;
+    }
+    :root[data-theme="light"] {
+      --bg: #F7F4EF; --surface: #FFFFFF; --surface-alt: #F0ECE4;
+      --text: #1C1A18; --muted: #6B6560; --line: #E4DFD6; --line-strong: #D2CBBE;
+      --accent: #FF5500; --accent-hover: #E04A00; --on-accent: #121214;
+      --out: #C62828; --low: #B84A00; --scrim: rgba(28, 26, 24, .45);
+      --ok: #1E7A3C; --info: #1F5FBF;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+      font-family: 'Be Vietnam Pro', Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.45;
+    }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    textarea.field { resize: vertical; line-height: 1.45; font-size: 15px; }
+    a { color: inherit; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+    /* ---------- top bar ---------- */
+    .top { border-bottom: 1px solid var(--line); background: var(--surface-alt); }
+    .top-in { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 64px; }
+    .top h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+    .top-actions { display: flex; align-items: center; gap: 18px; }
+    .link-btn { background: none; border: 0; padding: 4px 0; cursor: pointer; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; font-size: 14px; }
+    .link-btn:hover, .top-actions a:hover { color: var(--text); }
+    .top-actions a { color: var(--muted); font-size: 14px; text-underline-offset: 3px; }
+
+    main.wrap { padding-top: 24px; padding-bottom: 64px; }   /* main.wrap: must beat .wrap's own padding */
+
+    /* ---------- filters: they are also the stock summary ---------- */
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      display: inline-flex; align-items: baseline; gap: 8px; cursor: pointer;
+      padding: 9px 16px; border-radius: 999px; border: 1px solid var(--line-strong); background: transparent; color: var(--text);
+    }
+    .chip b { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .chip:hover { border-color: var(--accent); }
+    .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+    .chip.is-attn b { color: var(--low); }
+    .chip.is-attn-out b { color: var(--out); }
+    .chip[aria-pressed="true"] b { color: inherit; }
+
+    .toolbar { display: flex; gap: 12px; margin: 16px 0; align-items: center; }
+    .toolbar .search { flex: 1; min-width: 0; }
+
+    /* ---------- buttons + fields ---------- */
+    .btn {
+      min-height: 38px; padding: 8px 18px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+      border: 1px solid var(--line-strong); background: transparent; color: var(--text); font-weight: 600; font-size: 14px;
+      transition: border-color .2s, background .2s, opacity .2s;
+    }
+    .btn:hover:not(:disabled) { border-color: var(--accent); }
+    .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn:disabled { opacity: .45; cursor: default; }
+    .btn-primary:disabled { background: transparent; border-color: var(--line-strong); color: var(--muted); opacity: .6; }
+    .btn-danger { border-color: transparent; color: var(--muted); font-weight: 400; text-decoration: underline; text-underline-offset: 3px; padding-inline: 10px; }
+    .btn-danger:hover:not(:disabled) { color: var(--out); border-color: transparent; }
+
+    .field {
+      width: 100%; min-height: 42px; padding: 9px 14px; border-radius: 8px; font-size: 16px;
+      border: 1px solid var(--line-strong); background: var(--surface); color: var(--text);
+    }
+    .field::placeholder { color: var(--muted); }
+    .field:focus { outline: none; border-color: var(--accent); }
+    .field[aria-invalid="true"] { border-color: var(--out); }
+
+    /* ---------- product table ---------- */
+    .table { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; transition: opacity .15s; }
+    .table.is-loading { opacity: .55; }
+    .thead, .row {
+      display: grid; align-items: center; gap: 16px; padding: 14px 18px;
+      grid-template-columns: 56px minmax(0, 1fr) 168px 208px 248px;   /* fixed last column keeps the header aligned with every row */
+    }
+    .thead { padding-block: 10px; color: var(--muted); font-size: 13px; background: var(--surface-alt); border-bottom: 1px solid var(--line); }
+    .thead span:first-child { grid-column: 1 / 3; }
+    .row { border-bottom: 1px solid var(--line); box-shadow: inset 3px 0 0 transparent; transition: box-shadow .2s; }
+    .row:last-child { border-bottom: 0; }
+    .row.is-dirty { box-shadow: inset 3px 0 0 var(--accent); }
+    .row.is-busy { opacity: .6; pointer-events: none; }
+
+    .cover { width: 56px; height: 56px; border-radius: 6px; background: var(--surface-alt); border: 1px solid var(--line); overflow: hidden; display: grid; place-items: center; }
+    .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .cover .disc { width: 60%; aspect-ratio: 1; border-radius: 50%; background: repeating-radial-gradient(circle, var(--line-strong) 0 1.2px, var(--surface) 1.2px 2.6px); }
+
+    .info { min-width: 0; }
+    .title { font-weight: 700; overflow-wrap: anywhere; }
+    .artist { color: var(--muted); font-size: 14px; }
+    .artist .year { margin-left: 8px; }
+    .discogs { font-size: 12px; color: var(--muted); text-underline-offset: 2px; }
+
+    .cell-label { display: none; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+    .money { position: relative; }
+    .money .field { padding-right: 30px; text-align: right; font-variant-numeric: tabular-nums; }
+    .money::after { content: "₫"; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+
+    /* the one memorable element: the stock stepper */
+    .stock-line { display: flex; align-items: center; gap: 6px; }
+    .step {
+      width: 36px; height: 36px; flex: none; border-radius: 50%; cursor: pointer; font-size: 18px; line-height: 1;
+      border: 1px solid var(--line-strong); background: transparent; color: var(--text);
+    }
+    .step:hover { border-color: var(--accent); color: var(--accent); }
+    .stock-input { width: 72px; min-width: 0; text-align: center; font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; -moz-appearance: textfield; appearance: textfield; }
+    .stock-input::-webkit-outer-spin-button, .stock-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .stock-input::placeholder { font-size: 13px; font-weight: 400; }
+    .state { margin-top: 4px; font-size: 13px; color: var(--muted); padding-left: 42px; }
+    .state.is-low { color: var(--low); font-weight: 600; }
+    .state.is-out { color: var(--out); font-weight: 600; }
+
+    .actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
+    .row-error { grid-column: 2 / -1; margin: -4px 0 0; color: var(--out); font-size: 13px; font-weight: 600; }
+
+    .empty { padding: 56px 24px; text-align: center; color: var(--muted); }
+    .empty p { margin: 0 auto 16px; max-width: 46ch; }
+
+    .pager { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 20px; color: var(--muted); font-size: 14px; }
+
+    /* ---------- login ---------- */
+    .login { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+    .login-card { width: min(420px, 100%); border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 28px; }
+    .login-card h1 { margin: 0 0 6px; font-size: 22px; }
+    .login-card p { margin: 0 0 18px; color: var(--muted); }
+    .login-card p.form-error { margin: 10px 0 0; color: var(--out); }
+    .login-card .field { margin-bottom: 12px; }
+    .login-card .btn { width: 100%; }
+    .form-error { margin: 8px 0 0; min-height: 1.3em; color: var(--out); font-size: 14px; font-weight: 600; }
+
+    /* ---------- modal ---------- */
+    .backdrop { position: fixed; inset: 0; z-index: 50; background: var(--scrim); display: grid; place-items: center; padding: 16px; overflow-y: auto; }
+    .modal { width: min(460px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 14px; padding: 22px; box-shadow: 0 24px 60px -20px rgba(0, 0, 0, .6); }
+    .modal-wide { width: min(640px, 100%); }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+    .modal-head h2 { margin: 0; font-size: 18px; }
+    .icon-btn { width: 36px; height: 36px; border-radius: 50%; border: 0; background: transparent; cursor: pointer; font-size: 22px; line-height: 1; color: var(--muted); }
+    .icon-btn:hover { color: var(--text); background: var(--surface-alt); }
+    .modal .money .field { text-align: left; }
+    .modal label { display: block; font-size: 14px; color: var(--muted); margin: 14px 0 6px; }
+    .modal .hint { margin: 8px 0 0; color: var(--muted); font-size: 14px; min-height: 1.3em; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+    .search-row { display: flex; gap: 8px; }
+    .results { margin: 14px 0 0; padding: 0; list-style: none; max-height: 52vh; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; }
+    .results:empty { display: none; }
+    .result { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+    .result:last-child { border-bottom: 0; }
+    .result .cover { width: 48px; height: 48px; }
+    .result .meta { color: var(--muted); font-size: 13px; }
+    .picked { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px; background: var(--surface-alt); border-radius: 10px; }
+
+    /* ---------- toast ---------- */
+    .toast {
+      position: fixed; left: 50%; bottom: 24px; z-index: 60; max-width: min(520px, calc(100vw - 32px));
+      transform: translate(-50%, 16px); opacity: 0; pointer-events: none;
+      padding: 12px 18px; border-radius: 10px; background: var(--text); color: var(--bg); font-weight: 600; font-size: 14px;
+      transition: opacity .2s, transform .2s;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .toast.is-error { background: var(--out); color: #fff; }
+    :root[data-theme="light"] .toast.is-error { background: var(--out); }
+
+    /* ---------- narrower screens: each product becomes a stacked card ---------- */
+    @media (max-width: 1000px) {
+      .thead { display: none; }
+      .row {
+        grid-template-columns: 56px minmax(0, 1fr); gap: 12px 14px;
+        grid-template-areas: "cover info" "price price" "stock stock" "actions actions";
+      }
+      .row .cover { grid-area: cover; }
+      .row .info { grid-area: info; }
+      .row .c-price { grid-area: price; }
+      .row .c-stock { grid-area: stock; }
+      .row .actions { grid-area: actions; justify-content: flex-start; }
+      .row-error { grid-column: 1 / -1; }
+      .cell-label { display: block; }
+      .money .field { text-align: left; }
+      .state { padding-left: 0; }
+    }
+    @media (max-width: 560px) {
+      .wrap { padding: 0 14px; }
+      .toolbar { flex-direction: column; align-items: stretch; }
+      .top-actions a { display: none; }
+    }
+
+    /* =====================================================================
+       Admin shell: sidebar + pages (Trang chủ, Đơn hàng, Sản phẩm, Kho vận)
+       ===================================================================== */
+    .shell { display: grid; grid-template-columns: 228px minmax(0, 1fr); min-height: 100vh; }
+    .side {
+      position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 22px;
+      padding: 22px 14px; border-right: 1px solid var(--line); background: var(--surface-alt);
+    }
+    .brand { padding: 0 12px; }
+    .brand b { display: block; font-size: 18px; letter-spacing: -.01em; }
+    .brand span { color: var(--muted); font-size: 13px; }
+    .nav { display: flex; flex-direction: column; gap: 2px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px;
+      text-decoration: none; color: var(--muted); font-weight: 600;
+    }
+    .nav-item svg { width: 20px; height: 20px; flex: none; }
+    .nav-item:hover { color: var(--text); background: var(--surface); }
+    .nav-item.is-active { color: var(--text); background: var(--surface); box-shadow: inset 3px 0 0 var(--accent); }
+    .nav-item.is-active svg { color: var(--accent); }
+    .nav-badge {
+      margin-left: auto; min-width: 24px; padding: 1px 8px; border-radius: 999px; text-align: center;
+      background: var(--accent); color: var(--on-accent); font-size: 12px; font-variant-numeric: tabular-nums;
+    }
+    .side-foot { margin-top: auto; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 0 12px; font-size: 14px; }
+    .side-foot a { color: var(--muted); text-underline-offset: 3px; }
+    .side-foot a:hover { color: var(--text); }
+
+    .content { width: 100%; max-width: 1340px; padding: 28px 32px 72px; min-width: 0; }
+    .page-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
+    .page-head h1 { margin: 0; font-size: 26px; letter-spacing: -.015em; }
+    .page-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .page-actions .field { width: 320px; max-width: 100%; min-height: 38px; font-size: 14px; border-radius: 999px; }
+
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; margin-bottom: 20px; }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+    .panel-head h2 { margin: 0; font-size: 17px; }
+    .panel-head .hint, .section-hint { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+    .panel-note { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
+    .panel-empty { margin: 0; color: var(--muted); padding: 24px 0; text-align: center; }
+    .section-title { margin: 28px 0 4px; font-size: 18px; }
+    .section-hint { margin-bottom: 14px; }
+
+    /* "what needs doing": one row of numbers split by hairlines, each one a link */
+    .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); row-gap: 18px; }
+    .stat {
+      display: flex; flex-direction: column; gap: 4px; padding: 2px 18px; min-width: 0;
+      border: 0; border-left: 1px solid var(--line); background: none; color: inherit; text-align: left;
+      text-decoration: none; cursor: pointer; font: inherit;
+    }
+    .stat:first-child { border-left: 0; padding-left: 0; }
+    .stat-label { display: block; color: var(--muted); font-size: 14px; }
+    .stat-label svg { width: 14px; height: 14px; margin-left: 2px; vertical-align: -2px; }
+    .stat:hover .stat-label, .stat[aria-pressed="true"] .stat-label { color: var(--text); }
+    .stat[aria-pressed="true"] .stat-value { color: var(--accent); }
+    .stat-value { font-size: 28px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
+    .stat-value.is-alert { color: var(--out); }
+    .stat-sub { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--muted); }
+    .stat-sub svg { width: 14px; height: 14px; flex: none; }
+    .stat-sub.is-alert { color: var(--out); font-weight: 600; }
+    .strip-foot { margin: 18px -22px -20px; padding: 12px 22px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+
+    /* business numbers */
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+    .metric-label { display: flex; align-items: center; gap: 2px; color: var(--muted); font-size: 14px; }
+    .metric-label svg { width: 14px; height: 14px; flex: none; }
+    a.metric-label:hover { color: var(--text); }
+    .metric-value { margin: 4px 0 2px; font-size: 30px; font-weight: 700; letter-spacing: -.015em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .delta { display: inline-flex; align-items: center; gap: 3px; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .delta svg { width: 12px; height: 12px; }
+    .delta.up { color: var(--ok); }
+    .delta.down { color: var(--out); }
+    .delta.flat { color: var(--muted); font-weight: 400; }
+    .compare { margin: 16px 0 0; color: var(--muted); font-size: 13px; }
+
+    .split { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+    .chart-readout { margin: 0 0 12px; font-size: 14px; color: var(--muted); min-height: 1.45em; }
+    .chart-readout b { color: var(--text); }
+    .bars { display: flex; align-items: flex-end; gap: 4px; height: 190px; border-bottom: 1px solid var(--line-strong); }
+    .bar { flex: 1; min-width: 3px; border-radius: 3px 3px 0 0; background: var(--accent); opacity: .78; cursor: default; }
+    .bar.is-zero { background: var(--line-strong); opacity: 1; }
+    .bar:hover, .bar:focus-visible { opacity: 1; }
+    .bar.is-today { opacity: 1; }
+    .bar-axis { display: flex; gap: 4px; margin-top: 6px; font-size: 11px; color: var(--muted); }
+    .bar-axis span { flex: 1; min-width: 3px; text-align: center; white-space: nowrap; overflow: visible; }
+
+    .top-list { list-style: none; margin: 0; padding: 0; }
+    .top-item { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); }
+    .top-item:last-child { border-bottom: 0; }
+    .top-item .cover, .item-cell .cover { width: 40px; height: 40px; }
+    .top-item .num { font-size: 14px; }
+
+    .select {
+      min-height: 38px; padding: 7px 34px 7px 14px; border-radius: 999px; cursor: pointer; font-size: 14px;
+      border: 1px solid var(--line-strong); background-color: var(--surface); color: var(--text);
+      -webkit-appearance: none; appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+      background-position: right 17px center, right 12px center; background-size: 5px 5px; background-repeat: no-repeat;
+    }
+    .select:hover { border-color: var(--accent); }
+    .select.is-set { border-color: var(--accent); }
+    .icon-only { width: 38px; height: 38px; padding: 0; display: inline-grid; place-items: center; }
+    .icon-only svg { width: 17px; height: 17px; }
+    .btn-sm { min-height: 32px; padding: 5px 14px; font-size: 13px; }
+    .btn-warn { color: var(--out); border-color: color-mix(in srgb, var(--out) 55%, transparent); }
+    .btn-warn:hover:not(:disabled) { border-color: var(--out); }
+
+    /* ---------- orders ---------- */
+    .tabs { display: flex; gap: 2px; overflow-x: auto; border-bottom: 1px solid var(--line); margin-bottom: 14px; scrollbar-width: thin; }
+    .tab {
+      padding: 12px 12px; border: 0; background: none; cursor: pointer; white-space: nowrap;
+      color: var(--muted); font-weight: 600; box-shadow: inset 0 -2px 0 transparent;
+    }
+    .tab b { margin-left: 5px; font-variant-numeric: tabular-nums; }
+    .tab:hover { color: var(--text); }
+    .tab[aria-selected="true"] { color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+    .tab[aria-selected="true"] b { color: var(--accent); }
+    .filterbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
+    .found { margin-left: 4px; color: var(--muted); font-size: 13px; }
+    .bulkbar {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; padding: 10px 14px;
+      border-radius: 10px; border: 1px solid var(--accent); background: var(--surface-alt); font-size: 14px;
+    }
+    .bulkbar b { margin-right: 6px; }
+
+    .othead, .orow {
+      display: grid; align-items: center; gap: 12px; padding: 14px 16px;
+      grid-template-columns: 20px minmax(118px, .95fr) minmax(110px, .9fr) minmax(150px, 1.4fr) minmax(150px, 1.15fr) minmax(104px, .8fr) 100px 120px;   /* fixed widths: every row is its own grid, so columns must not depend on content */
+    }
+    .othead { padding-block: 10px; color: var(--muted); font-size: 13px; background: var(--surface-alt); border-bottom: 1px solid var(--line); }
+    .othead .num { font-weight: 400; }
+    .orow { border-bottom: 1px solid var(--line); cursor: pointer; box-shadow: inset 3px 0 0 transparent; }
+    .orow:last-child { border-bottom: 0; }
+    .orow:hover { background: var(--surface-alt); }
+    .orow.is-selected { background: var(--surface-alt); box-shadow: inset 3px 0 0 var(--accent); }
+    .orow.is-late { box-shadow: inset 3px 0 0 var(--out); }
+    .orow input[type="checkbox"], .othead input[type="checkbox"] { width: 17px; height: 17px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+    .ord-no { padding: 0; border: 0; background: none; cursor: pointer; font-weight: 700; text-align: left; font-variant-numeric: tabular-nums; }
+    .ord-no:hover { color: var(--accent); }
+    .small { font-size: 13px; color: var(--muted); }
+    .clip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .num { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .item-cell { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; align-items: center; min-width: 0; }
+    .c-act { display: flex; justify-content: flex-end; }
+
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; border: 1px solid currentColor; font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+    .s-pending { color: var(--accent); }
+    .s-confirmed { color: var(--low); }
+    .s-shipping { color: var(--info); }
+    .s-completed { color: var(--ok); }
+    .s-failed { color: var(--out); }
+    .s-returned, .s-cancelled { color: var(--muted); }
+    .due { margin-top: 5px; font-size: 12.5px; color: var(--muted); }
+    .due.is-late { color: var(--out); font-weight: 700; }
+    .due.is-soon { color: var(--low); font-weight: 600; }
+
+    /* order detail dialog */
+    .od-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .od-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+    .od-box { padding: 12px 14px; border-radius: 10px; background: var(--surface-alt); font-size: 14px; min-width: 0; }
+    .od-box h3 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+    .od-box p { margin: 0 0 2px; overflow-wrap: anywhere; }
+    .od-box a { color: var(--text); }
+    .od-note { margin: 0 0 16px; padding: 10px 14px; border-left: 3px solid var(--low); border-radius: 0 8px 8px 0; background: var(--surface-alt); font-size: 14px; overflow-wrap: anywhere; }
+    .od-items { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 10px; }
+    .od-item { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+    .od-item:last-child { border-bottom: 0; }
+    .od-item .cover { width: 44px; height: 44px; }
+    .od-sum { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; margin: 12px 0 0; font-size: 14px; }
+    .od-sum dt { color: var(--muted); }
+    .od-sum dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+    .od-sum .total { font-size: 17px; font-weight: 700; color: var(--text); }
+    .od-actions { justify-content: space-between; }
+    .od-actions > div { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* ---------- warehouse ---------- */
+    .prow, .pthead {
+      display: grid; align-items: center; gap: 14px; padding: 12px 18px;
+      grid-template-columns: 48px minmax(0, 1fr) 130px 100px 190px 110px;
+    }
+    .pthead { padding-block: 10px; color: var(--muted); font-size: 13px; background: var(--surface-alt); border-bottom: 1px solid var(--line); }
+    .pthead span:first-child { grid-column: 1 / 3; }
+    .prow { border-bottom: 1px solid var(--line); }
+    .prow:last-child { border-bottom: 0; }
+    .prow .cover { width: 48px; height: 48px; }
+    .pick-qty { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .prow a { color: var(--text); text-underline-offset: 3px; }
+
+
+    /* ---------- after-sales cases ---------- */
+    .s-lost { color: var(--out); }
+    .cs-open { color: var(--accent); }
+    .cs-waiting_carrier { color: var(--info); }
+    .cs-waiting_customer { color: var(--low); }
+    .cs-resolved { color: var(--ok); }
+    .cs-rejected { color: var(--muted); }
+    .src { display: inline-block; margin: 4px 6px 0 0; padding: 0 8px; border-radius: 4px; font-size: 11.5px; font-weight: 700; background: var(--surface-alt); color: var(--muted); }
+    .src-customer { background: color-mix(in srgb, var(--info) 16%, transparent); color: var(--info); }
+    .src-new { background: var(--out); color: #fff; }
+
+    .cthead, .crow {
+      display: grid; align-items: center; gap: 12px; padding: 14px 16px;
+      grid-template-columns: 128px minmax(190px, 1.7fr) minmax(150px, 1fr) minmax(150px, 1fr) 140px;
+    }
+    .cthead { padding-block: 10px; color: var(--muted); font-size: 13px; background: var(--surface-alt); border-bottom: 1px solid var(--line); }
+    .cthead .num { font-weight: 400; }
+    .crow { border-bottom: 1px solid var(--line); cursor: pointer; box-shadow: inset 3px 0 0 transparent; }
+    .crow:last-child { border-bottom: 0; }
+    .crow:hover { background: var(--surface-alt); }
+    .crow.is-new { box-shadow: inset 3px 0 0 var(--out); }
+    .crow.is-late { box-shadow: inset 3px 0 0 var(--low); }
+
+    .modal-xl { width: min(980px, 100%); }
+    .case-title { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 12px 0 14px; font-size: 19px; }
+    .case-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+    .case-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+    .case-main h4, .case-side h4 { margin: 0 0 8px; font-size: 14px; }
+    .case-side { padding-left: 18px; border-left: 1px solid var(--line); max-height: 70vh; overflow-y: auto; }
+    .checklist { list-style: none; margin: 0; padding: 0; counter-reset: step; }
+    .checklist li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; align-items: start; padding: 5px 0; font-size: 14px; }
+    .checklist input { width: 17px; height: 17px; margin: 2px 0 0; accent-color: var(--accent); }
+    .checklist input:checked + label { color: var(--muted); text-decoration: line-through; }
+    .action-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .action-form { margin-top: 12px; padding: 14px; border-radius: 10px; border: 1px solid var(--accent); background: var(--surface-alt); display: flex; flex-direction: column; gap: 8px; }
+    .action-form h5 { margin: 0; font-size: 14px; }
+    .action-form[hidden] { display: none; }
+    .modal .checklist label, .modal label.check { margin: 0; color: var(--text); font-size: 14px; }
+    .modal label.check { display: inline-flex; }
+    .action-form .field { min-height: 38px; font-size: 14px; }
+    .radio-col { display: flex; flex-direction: column; gap: 6px; }
+    .check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+    .check input { width: 16px; height: 16px; accent-color: var(--accent); }
+    .reship-row { display: grid; grid-template-columns: minmax(0, 1fr) 80px auto; gap: 10px; align-items: center; font-size: 14px; }
+    .compose-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+    .timeline { list-style: none; margin: 0; padding: 0; }
+    .ev { position: relative; padding: 0 0 14px 16px; font-size: 14px; overflow-wrap: anywhere; }
+    .ev::before { content: ""; position: absolute; left: 0; top: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); }
+    .ev::after { content: ""; position: absolute; left: 3px; top: 16px; bottom: 0; width: 1px; background: var(--line); }
+    .ev:last-child::after { display: none; }
+    .ev-customer::before { background: var(--info); }
+    .ev-shop::before { background: var(--accent); }
+    .ev-meta { color: var(--muted); font-size: 12.5px; }
+    .ev-meta .src { margin: 0 0 0 6px; }
+
+    .od-cases { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .od-cases-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+    .od-cases-head h3, .od-cases-head h4 { margin: 0; font-size: 14px; }
+    .mini-list { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+    .mini-list li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 6px 0; border-bottom: 1px solid var(--line); }
+    .mini-list li:last-child { border-bottom: 0; }
+    .mini-list .link-btn { color: var(--text); font-weight: 700; }
+    .ship-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+    .ship-form .field { min-height: 36px; font-size: 14px; }
+    .od-box + .od-box { margin-top: 0; }
+    .steps-box { margin-top: 14px; padding: 12px 14px; border-radius: 10px; background: var(--surface-alt); font-size: 14px; }
+    .steps-preview { margin: 6px 0 0; padding-left: 20px; color: var(--muted); }
+    .choice-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+    .choice { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; text-align: left; cursor: pointer; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface-alt); }
+    .choice span { color: var(--muted); font-size: 14px; }
+    .choice:hover { border-color: var(--accent); }
+
+    @media (max-width: 1180px) {
+      .cthead { display: none; }
+      .crow { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; }
+      .crow > :nth-child(2), .crow > :nth-child(3) { grid-column: 1 / -1; }
+      .case-grid { grid-template-columns: minmax(0, 1fr); }
+      .case-side { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); padding-top: 14px; max-height: none; }
+    }
+    @media (max-width: 640px) { .ship-form { grid-template-columns: 1fr; } }
+    @media (max-width: 1180px) {
+      .othead { display: none; }
+      .orow {
+        grid-template-columns: 22px minmax(0, 1fr) auto; gap: 8px 12px; align-items: start;
+        grid-template-areas: "chk no total" "chk cust cust" "chk items items" "chk status status" "chk ship act";
+      }
+      .orow .c-chk { grid-area: chk; padding-top: 2px; }
+      .orow .c-no { grid-area: no; }
+      .orow .c-cust { grid-area: cust; }
+      .orow .c-items { grid-area: items; }
+      .orow .c-status { grid-area: status; }
+      .orow .c-ship { grid-area: ship; align-self: center; }
+      .orow .c-total { grid-area: total; }
+      .orow .c-act { grid-area: act; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .split { grid-template-columns: minmax(0, 1fr); }
+    }
+    @media (max-width: 900px) {
+      .shell { grid-template-columns: minmax(0, 1fr); }
+      .side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 12px 16px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .brand { padding: 0; }
+      .brand span { display: none; }
+      .nav { order: 3; flex-basis: 100%; flex-direction: row; overflow-x: auto; }
+      .nav-item { white-space: nowrap; padding: 8px 10px; }
+      .nav-item.is-active { box-shadow: inset 0 -2px 0 var(--accent); }
+      .side-foot { margin: 0 0 0 auto; flex-direction: row; align-items: center; gap: 14px; padding: 0; }
+      .content { padding: 20px 16px 64px; }
+      .prow, .pthead { grid-template-columns: 48px minmax(0, 1fr) auto; }
+      .pthead { display: none; }
+      .prow > :nth-child(n+4) { grid-column: 2 / -1; }
+      .od-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stat, .stat:first-child { border-left: 0; padding: 0 8px 0 0; }
+      .metric-value { font-size: 24px; }
+      .page-actions, .page-actions .field { width: 100%; }
+      .page-head h1 { font-size: 22px; }
+    }
+    @media print {
+      .side, .no-print, .toast, .backdrop { display: none !important; }
+      .shell { display: block; }
+      body { background: #fff; color: #000; }
+      .panel, .table { border-color: #999; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    // ---- theme: follow the shop's own setting ------------------------------------------
+    (function () {
+      let mode = null;
+      try { mode = localStorage.getItem('bui_theme'); } catch (e) { /* no storage */ }
+      if (mode !== 'light' && mode !== 'dark') mode = (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', mode);
+    })();
+
+    const TOKEN_KEY = 'bui_admin_token';
+    const MAX_STOCK = 100000;
+    const STATE = { token: '', status: 'all', search: '', page: 1, products: [], summary: null, pagination: null, loading: false, loaded: false, loadError: '' };
+    const drafts = {};   // unsaved edits per product id: { price: '1.200.000', stock: '5' }
+    try { STATE.token = sessionStorage.getItem(TOKEN_KEY) || ''; } catch (e) { /* no storage */ }
+
+    const VND = n => new Intl.NumberFormat('vi-VN').format(n);
+    const root = document.getElementById('app');
+    const $ = (sel, el) => (el || document).querySelector(sel);
+
+    // ---- tiny DOM helper: text is always set as text, never as HTML ----------------------
+    function h(tag, props, ...kids) {
+      const el = document.createElement(tag);
+      for (const [k, v] of Object.entries(props || {})) {
+        if (v === null || v === undefined || v === false) continue;
+        if (k === 'class') el.className = v;
+        else if (k.slice(0, 2) === 'on') el.addEventListener(k.slice(2).toLowerCase(), v);
+        else if (k in el && k !== 'list') { try { el[k] = v; } catch (e) { el.setAttribute(k, v); } }
+        else el.setAttribute(k, v === true ? '' : v);
+      }
+      for (const kid of kids.flat()) {
+        if (kid === null || kid === undefined || kid === false) continue;
+        el.append(kid.nodeType ? kid : String(kid));
+      }
+      return el;
+    }
+    const safeUrl = u => (/^https?:\/\//i.test(u || '') ? u : '');
+
+    function cover(url, extra) {
+      const box = h('div', { class: 'cover' + (extra ? ' ' + extra : '') });
+      const src = safeUrl(url);
+      const disc = () => box.replaceChildren(h('span', { class: 'disc' }));
+      if (!src) { disc(); return box; }
+      const img = h('img', { src, alt: '', loading: 'lazy' });
+      img.addEventListener('error', disc);
+      box.append(img);
+      return box;
+    }
+
+    // ---- toast ---------------------------------------------------------------------------
+    let toastTimer;
+    function toast(message, isError) {
+      const t = $('#toast');
+      t.textContent = message;
+      t.classList.toggle('is-error', !!isError);
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), isError ? 5000 : 3200);
+    }
+
+    // ---- API -----------------------------------------------------------------------------
+    async function api(path, opts) {
+      opts = opts || {};
+      const res = await fetch('/api/admin' + path, {
+        method: opts.method || 'GET',
+        headers: Object.assign({ 'X-Admin-Token': STATE.token }, opts.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = new Error(data.error || ('Có lỗi xảy ra (' + res.status + ').'));
+        err.status = res.status; err.data = data;
+        if (res.status === 403) signOut(data.error || 'Mã quản trị không đúng.');
+        throw err;
+      }
+      return data;
+    }
+
+    // ---- login / logout ------------------------------------------------------------------
+    function signOut(message) {
+      STATE.token = ''; STATE.loaded = false;
+      document.querySelectorAll('.backdrop').forEach(b => b.remove());   // close any open dialog
+      try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) { /* no storage */ }
+      renderLogin(message || '');
+    }
+
+    function renderLogin(message) {
+      const input = h('input', { class: 'field', type: 'password', autocomplete: 'current-password', placeholder: 'Mã quản trị', 'aria-label': 'Mã quản trị' });
+      const error = h('p', { class: 'form-error', role: 'alert' }, message);
+      const submit = h('button', { class: 'btn btn-primary', type: 'button' }, 'Đăng nhập');
+      const go = async () => {
+        const token = input.value.trim();
+        if (!token) { error.textContent = 'Vui lòng nhập mã quản trị.'; input.focus(); return; }
+        submit.disabled = true; error.textContent = '';
+        STATE.token = token;
+        try {
+          await api('/products?per_page=1');
+          try { sessionStorage.setItem(TOKEN_KEY, token); } catch (e) { /* no storage */ }
+          start();
+        } catch (e) {
+          // a wrong code already re-rendered the login with its message; show other problems here
+          if (e.status !== 403) { STATE.token = ''; error.textContent = e.message; submit.disabled = false; }
+        }
+      };
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+      submit.addEventListener('click', go);
+      root.replaceChildren(h('div', { class: 'login' }, h('div', { class: 'login-card' },
+        h('h1', null, 'Quản trị cửa hàng'),
+        h('p', null, 'Nhập mã quản trị để xử lý đơn hàng, sản phẩm và tồn kho. Mã là giá trị ADMIN_TOKEN trong file .env của máy chủ.'),
+        input, submit, error)));
+      input.focus();
+    }
+
+    // ---- row editing helpers -------------------------------------------------------------
+    // price/stock boxes hold text; these turn it into a number (or null = empty) or flag it as invalid
+    function parsePrice(text) {
+      const t = String(text).trim();
+      if (t === '') return { ok: true, value: null };
+      if (!/^[\d.\s,]+$/.test(t)) return { ok: false, message: 'Giá chỉ gồm chữ số.' };
+      const n = parseInt(t.replace(/\D/g, ''), 10);
+      if (!(n >= 1 && n <= 1000000000)) return { ok: false, message: 'Giá phải từ 1₫ đến 1.000.000.000₫.' };
+      return { ok: true, value: n };
+    }
+    function parseStock(text) {
+      const t = String(text).trim();
+      if (t === '') return { ok: true, value: null };
+      if (!/^\d+$/.test(t) || parseInt(t, 10) > MAX_STOCK) return { ok: false, message: 'Tồn kho là số nguyên từ 0 đến ' + VND(MAX_STOCK) + '.' };
+      return { ok: true, value: parseInt(t, 10) };
+    }
+    function evaluate(p) {
+      const d = drafts[p.id] || {};
+      const changes = {}; let message = '';
+      if (d.price !== undefined) {
+        const r = parsePrice(d.price);
+        if (!r.ok) message = r.message; else if (r.value !== p.price) changes.price = r.value;
+      }
+      if (d.stock !== undefined) {
+        const r = parseStock(d.stock);
+        if (!r.ok) message = message || r.message; else if (r.value !== p.stock) changes.stock = r.value;
+      }
+      return { changes, message, dirty: Object.keys(changes).length > 0, invalid: !!message };
+    }
+
+    const STATE_TEXT = { ok: 'Còn hàng', low: 'Sắp hết', out: 'Hết hàng', untracked: 'Chưa đếm số lượng' };
+
+    function productRow(p) {
+      const d = drafts[p.id] || {};
+      const priceInput = h('input', {
+        class: 'field', type: 'text', inputmode: 'numeric', autocomplete: 'off', placeholder: 'Liên hệ',
+        value: d.price !== undefined ? d.price : (p.price === null ? '' : VND(p.price)), 'aria-label': 'Giá bán của ' + p.title
+      });
+      const stockInput = h('input', {
+        class: 'field stock-input', type: 'text', inputmode: 'numeric', autocomplete: 'off', placeholder: 'Không đếm',
+        value: d.stock !== undefined ? d.stock : (p.stock === null ? '' : String(p.stock)), 'aria-label': 'Tồn kho của ' + p.title
+      });
+      const dec = h('button', { class: 'step', type: 'button', 'aria-label': 'Giảm tồn kho' }, '−');
+      const inc = h('button', { class: 'step', type: 'button', 'aria-label': 'Tăng tồn kho' }, '+');
+      const save = h('button', { class: 'btn btn-primary', type: 'button' }, 'Lưu');
+      const restock = h('button', { class: 'btn', type: 'button', title: p.stock === null ? 'Đĩa này chưa đếm số lượng. Nhập số lượng hiện có ở ô Tồn kho rồi bấm Lưu.' : null, disabled: p.stock === null }, 'Nhập thêm');
+      const del = h('button', { class: 'btn btn-danger', type: 'button' }, 'Xóa');
+      const error = h('p', { class: 'row-error', role: 'alert', hidden: true });
+      const row = h('div', { class: 'row', role: 'row' },
+        cover(p.cover),
+        h('div', { class: 'info' },
+          h('div', { class: 'title' }, p.title),
+          h('div', { class: 'artist' }, p.artist, p.year ? h('span', { class: 'year' }, p.year) : null),
+          h('a', { class: 'discogs', href: 'https://www.discogs.com/release/' + p.id, target: '_blank', rel: 'noopener' }, 'Discogs ' + p.id)),
+        h('div', { class: 'c-price' }, h('div', { class: 'cell-label' }, 'Giá bán'), h('div', { class: 'money' }, priceInput)),
+        h('div', { class: 'c-stock' }, h('div', { class: 'cell-label' }, 'Tồn kho'),
+          h('div', { class: 'stock-line' }, dec, stockInput, inc),
+          h('div', { class: 'state is-' + p.state }, STATE_TEXT[p.state] + (p.state === 'low' ? ' (còn ' + p.stock + ')' : ''))),
+        h('div', { class: 'actions' }, save, restock, del),
+        error);
+
+      const refresh = () => {                       // cheap in-place update while typing: no re-render, no lost focus
+        const ev = evaluate(p);
+        save.disabled = !ev.dirty || ev.invalid;
+        row.classList.toggle('is-dirty', ev.dirty);
+        priceInput.setAttribute('aria-invalid', String(ev.invalid && (drafts[p.id] || {}).price !== undefined && !parsePrice(drafts[p.id].price).ok));
+        stockInput.setAttribute('aria-invalid', String(ev.invalid && (drafts[p.id] || {}).stock !== undefined && !parseStock(drafts[p.id].stock).ok));
+        error.hidden = !ev.invalid; error.textContent = ev.message;
+      };
+      priceInput.addEventListener('input', () => { (drafts[p.id] = drafts[p.id] || {}).price = priceInput.value; refresh(); });
+      priceInput.addEventListener('focus', () => priceInput.select());
+      priceInput.addEventListener('blur', () => {   // show 1.200.000 once typing is done
+        const r = parsePrice(priceInput.value);
+        if (r.ok && r.value !== null) { priceInput.value = VND(r.value); (drafts[p.id] = drafts[p.id] || {}).price = priceInput.value; refresh(); }
+      });
+      stockInput.addEventListener('input', () => { (drafts[p.id] = drafts[p.id] || {}).stock = stockInput.value; refresh(); });
+      stockInput.addEventListener('focus', () => stockInput.select());
+      const nudge = delta => {
+        const cur = parseStock(stockInput.value);
+        const base = cur.ok && cur.value !== null ? cur.value : 0;
+        stockInput.value = String(Math.min(MAX_STOCK, Math.max(0, base + delta)));
+        (drafts[p.id] = drafts[p.id] || {}).stock = stockInput.value; refresh();
+      };
+      dec.addEventListener('click', () => nudge(-1));
+      inc.addEventListener('click', () => nudge(1));
+      [priceInput, stockInput].forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter' && !save.disabled) { e.preventDefault(); saveRow(p, row, save); } }));
+      save.addEventListener('click', () => saveRow(p, row, save));
+      restock.addEventListener('click', () => openRestock(p));
+      del.addEventListener('click', () => removeProduct(p, row));
+      refresh();
+      return row;
+    }
+
+    async function saveRow(p, row, saveBtn) {
+      const ev = evaluate(p);
+      if (!ev.dirty || ev.invalid) return;
+      row.classList.add('is-busy');
+      try {
+        const updated = await api('/products/' + p.id, { method: 'PUT', body: ev.changes });
+        delete drafts[p.id];
+        toast('Đã lưu “' + updated.title + '”.');
+        await reload();
+      } catch (e) {
+        row.classList.remove('is-busy');
+        if (STATE.token) { const box = $('.row-error', row); box.hidden = false; box.textContent = e.message; }
+      }
+    }
+
+    async function removeProduct(p, row) {
+      if (!confirm('Xóa “' + p.title + '” khỏi cửa hàng?\nKhách sẽ không còn thấy đĩa này. Các đơn hàng cũ vẫn được giữ nguyên.')) return;
+      row.classList.add('is-busy');
+      try {
+        await api('/products/' + p.id, { method: 'DELETE' });
+        delete drafts[p.id];
+        toast('Đã xóa “' + p.title + '” khỏi cửa hàng.');
+        await reload();
+      } catch (e) {
+        row.classList.remove('is-busy');
+        if (STATE.token) toast(e.message, true);
+      }
+    }
+
+    // ---- modal ---------------------------------------------------------------------------
+    let modalSeq = 0;
+    // wide: true = 640px, 'xl' = 920px. onClose runs however the dialog is closed.
+    function openModal(title, content, wide, onClose) {
+      const previous = document.activeElement;
+      const titleId = 'modal-title-' + (++modalSeq);
+      const box = h('div', { class: 'modal' + (wide ? ' modal-wide' : '') + (wide === 'xl' ? ' modal-xl' : ''), role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': titleId },
+        h('div', { class: 'modal-head' }, h('h2', { id: titleId }, title), h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Đóng', onclick: () => close() }, '×')),
+        content);
+      const back = h('div', { class: 'backdrop', onmousedown: e => { if (e.target === back) close(); } }, box);
+      function onKey(e) {
+        const all = document.querySelectorAll('.backdrop');
+        if (all[all.length - 1] !== back) return;   // stacked dialogs: only the top one reacts
+        if (e.key === 'Escape') { e.stopPropagation(); close(); return; }
+        if (e.key !== 'Tab') return;
+        const f = Array.from(box.querySelectorAll('button:not([disabled]), input:not([disabled]), a[href]')).filter(el => !el.closest('[hidden]'));
+        if (!f.length) return;
+        const first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+      function close() {
+        if (!back.isConnected) return;
+        document.removeEventListener('keydown', onKey, true);
+        back.remove();
+        if (onClose) onClose();
+        if (previous && previous.focus && document.contains(previous)) previous.focus();
+      }
+      document.body.append(back);
+      document.addEventListener('keydown', onKey, true);
+      return { close, box };
+    }
+
+    // ---- "Nhập thêm": receive copies ---------------------------------------------------------
+    function openRestock(p) {
+      const qty = h('input', { class: 'field', type: 'text', inputmode: 'numeric', autocomplete: 'off', value: '5', 'aria-label': 'Số bản nhập thêm' });
+      const preview = h('p', { class: 'hint' });
+      const error = h('p', { class: 'form-error', role: 'alert' });
+      const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Nhập kho');
+      const cancel = h('button', { class: 'btn', type: 'button' }, 'Hủy');
+      const body = h('div', null,
+        h('p', { class: 'title' }, p.title),
+        h('p', { class: 'hint' }, 'Hiện có ' + p.stock + ' bản.'),
+        h('label', null, 'Số bản nhập thêm', qty), preview, error,
+        h('div', { class: 'modal-actions' }, cancel, ok));
+      const m = openModal('Nhập thêm hàng', body);
+      const value = () => (/^\d+$/.test(qty.value.trim()) ? parseInt(qty.value.trim(), 10) : NaN);
+      const update = () => { const n = value(); preview.textContent = n >= 1 && n <= MAX_STOCK ? 'Sau khi nhập: ' + VND(p.stock + n) + ' bản.' : ''; };
+      qty.addEventListener('input', update); update();
+      const submit = async () => {
+        const n = value();
+        if (!(n >= 1 && n <= MAX_STOCK)) { error.textContent = 'Nhập số nguyên từ 1 đến ' + VND(MAX_STOCK) + '.'; qty.focus(); return; }
+        ok.disabled = true; error.textContent = '';
+        try {
+          const u = await api('/products/' + p.id, { method: 'PUT', body: { add_stock: n } });
+          m.close();
+          toast('Đã nhập thêm ' + n + ' bản. “' + u.title + '” còn ' + VND(u.stock) + ' bản.');
+          await reload();
+        } catch (e) { ok.disabled = false; error.textContent = e.message; }
+      };
+      ok.addEventListener('click', submit);
+      cancel.addEventListener('click', () => m.close());
+      qty.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+      qty.focus(); qty.select();
+    }
+
+    // ---- "Thêm sản phẩm": find a Discogs release, then set price and stock ------------------------
+    function openAdd() {
+      const body = h('div');
+      const m = openModal('Thêm sản phẩm', body, true);
+
+      function viewSearch(prefill) {
+        const q = h('input', { class: 'field', type: 'search', autocomplete: 'off', placeholder: 'Tên đĩa, nghệ sĩ, hoặc mã / đường dẫn Discogs', value: prefill || '', 'aria-label': 'Tìm đĩa' });
+        const go = h('button', { class: 'btn btn-primary', type: 'button' }, 'Tìm');
+        const list = h('ul', { class: 'results' });
+        const msg = h('p', { class: 'hint' }, 'Gõ tên đĩa hoặc nghệ sĩ, hoặc dán đường dẫn Discogs, ví dụ discogs.com/release/249504.');
+        body.replaceChildren(h('div', { class: 'search-row' }, q, go), msg, list);
+        const run = async () => {
+          const text = q.value.trim();
+          if (!text) { msg.textContent = 'Nhập tên đĩa, nghệ sĩ hoặc mã Discogs để tìm.'; q.focus(); return; }
+          go.disabled = true; msg.textContent = 'Đang tìm…'; list.replaceChildren();
+          try {
+            const d = await api('/lookup?q=' + encodeURIComponent(text));
+            msg.textContent = d.results.length ? 'Chọn đĩa cần thêm vào cửa hàng.' : 'Không tìm thấy đĩa nào. Thử tên nghệ sĩ khác, hoặc dán đường dẫn Discogs.';
+            list.replaceChildren(...d.results.map(r => {
+              const pick = h('button', { class: 'btn', type: 'button', disabled: r.in_shop }, r.in_shop ? 'Đã có' : 'Chọn');
+              pick.addEventListener('click', () => viewForm(r, text));
+              return h('li', { class: 'result' }, cover(r.cover),
+                h('div', null, h('div', { class: 'title' }, r.title), h('div', { class: 'artist' }, r.artist, r.year ? h('span', { class: 'year' }, r.year) : null),
+                  h('div', { class: 'meta' }, [r.format, r.label].filter(Boolean).join(', '))),
+                pick);
+            }));
+          } catch (e) {
+            if (!STATE.token) { m.close(); return; }   // signed out: the login screen is showing
+            msg.textContent = e.message;
+          }
+          go.disabled = false;
+        };
+        go.addEventListener('click', run);
+        q.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); run(); } });
+        q.focus();
+      }
+
+      function viewForm(item, lastQuery) {
+        const price = h('input', { class: 'field', type: 'text', inputmode: 'numeric', autocomplete: 'off', placeholder: 'Ví dụ 1.200.000', 'aria-label': 'Giá bán' });
+        const stock = h('input', { class: 'field', type: 'text', inputmode: 'numeric', autocomplete: 'off', placeholder: 'Để trống nếu không đếm', 'aria-label': 'Tồn kho' });
+        const error = h('p', { class: 'form-error', role: 'alert' });
+        const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Thêm vào cửa hàng');
+        const back = h('button', { class: 'btn', type: 'button' }, 'Chọn đĩa khác');
+        body.replaceChildren(
+          h('div', { class: 'picked' }, cover(item.cover), h('div', null, h('div', { class: 'title' }, item.title), h('div', { class: 'artist' }, item.artist, item.year ? h('span', { class: 'year' }, item.year) : null))),
+          h('label', null, 'Giá bán (₫)', h('div', { class: 'money' }, price)),
+          h('label', null, 'Tồn kho (số bản)', stock),
+          h('p', { class: 'hint' }, 'Để trống tồn kho nếu bạn không muốn đếm số bản. Đĩa vẫn bán được, chỉ không hiện số còn lại.'),
+          error, h('div', { class: 'modal-actions' }, back, ok));
+        const submit = async () => {
+          const pr = parsePrice(price.value), st = parseStock(stock.value);
+          if (!pr.ok || pr.value === null) { error.textContent = pr.ok ? 'Vui lòng nhập giá bán.' : pr.message; price.focus(); return; }
+          if (!st.ok) { error.textContent = st.message; stock.focus(); return; }
+          ok.disabled = true; error.textContent = '';
+          try {
+            const created = await api('/products', { method: 'POST', body: { release: String(item.id), price: pr.value, stock: st.value } });
+            m.close();
+            STATE.status = 'all'; STATE.search = ''; STATE.page = 1;
+            const box = $('#q'); if (box) box.value = '';
+            toast('Đã thêm “' + created.title + '” vào cửa hàng.');
+            await reload();
+          } catch (e) { ok.disabled = false; error.textContent = e.message; }
+        };
+        ok.addEventListener('click', submit);
+        back.addEventListener('click', () => viewSearch(lastQuery));
+        [price, stock].forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } }));
+        price.addEventListener('blur', () => { const r = parsePrice(price.value); if (r.ok && r.value !== null) price.value = VND(r.value); });
+        price.focus();
+      }
+      viewSearch('');
+    }
+
+    // ==========================================================================================
+    // Shell: sidebar + hash routes (#home, #orders, #products, #inventory)
+    // ==========================================================================================
+    const ICONS = {
+      home: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.3 3.3a1 1 0 0 1 1.4 0l8 7.6A1 1 0 0 1 20 12.6h-1.5V20a1 1 0 0 1-1 1h-3.7v-5.2h-3.6V21H6.5a1 1 0 0 1-1-1v-7.4H4a1 1 0 0 1-.7-1.7z"/></svg>',
+      orders: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zM8.5 11h7M8.5 15h5"/></svg>',
+      products: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8l4 3 4-3"/></svg>',
+      cases: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v4.5M12 17.2v.3" stroke-linecap="round"/></svg>',
+      inventory: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6.5h11v9h-11zM13.5 9.5h4l3 3.2v2.8h-7z"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/></svg>',
+      chevron: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg>',
+      alert: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="8" cy="8" r="6.4"/><path d="M8 4.6v4.2M8 10.9v.4" stroke-linecap="round"/></svg>',
+      up: '<svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M6 1.5 10.5 7H7.3v3.5H4.7V7H1.5z"/></svg>',
+      down: '<svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><path d="M6 10.5 1.5 5h3.2V1.5h2.6V5h3.2z"/></svg>',
+      refresh: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M16 10a6 6 0 1 1-1.8-4.3M16 3.5v3.3h-3.3"/></svg>'
+    };
+    // Static SVG strings only -- never user data.
+    const icon = name => { const s = h('span', { class: 'ico' }); s.innerHTML = ICONS[name]; return s.firstChild; };
+
+    const NAV = [['home', 'Trang chủ'], ['orders', 'Đơn hàng'], ['cases', 'Sự cố'], ['products', 'Sản phẩm'], ['inventory', 'Kho vận']];
+    const navBadge = { orders: 0 };
+    STATE.view = 'home';
+
+    function renderShell() {
+      root.replaceChildren(h('div', { class: 'shell' },
+        h('aside', { class: 'side' },
+          h('div', { class: 'brand' }, h('b', null, 'Bụi Records'), h('span', null, 'Quản trị cửa hàng')),
+          h('nav', { class: 'nav', id: 'nav', 'aria-label': 'Mục quản trị' }),
+          h('div', { class: 'side-foot' },
+            h('a', { href: '/' }, 'Xem cửa hàng'),
+            h('button', { class: 'link-btn', type: 'button', onclick: () => signOut('') }, 'Đăng xuất'))),
+        h('main', { class: 'content', id: 'view' })));
+      renderNav();
+    }
+
+    function renderNav() {
+      const box = $('#nav'); if (!box) return;
+      fill(box, ...NAV.map(([key, label]) => {
+        const active = STATE.view === key;
+        // Clicking the page you are on (its address may carry filters or none) starts it fresh.
+        const same = e => { if (location.hash === '#' + key || (!location.hash && key === 'home')) { e.preventDefault(); route(); } };
+        return h('a', { href: '#' + key, class: 'nav-item' + (active ? ' is-active' : ''), 'aria-current': active ? 'page' : null, onclick: same },
+          icon(key), h('span', null, label),
+          key === 'orders' && navBadge.orders ? h('b', { class: 'nav-badge', title: navBadge.orders + ' đơn cần gửi' }, navBadge.orders) : null,
+          key === 'cases' && casesBadge.n ? h('b', { class: 'nav-badge', title: casesBadge.n + ' sự cố đang mở' }, casesBadge.n) : null);
+      }));
+    }
+    function setOrdersBadge(n) { if (navBadge.orders !== n) { navBadge.orders = n; renderNav(); } }
+
+    function parseHash() {
+      const raw = location.hash.replace(/^#/, '');
+      const cut = raw.indexOf('?');
+      const view = cut < 0 ? raw : raw.slice(0, cut);
+      return { view: VIEWS[view] ? view : 'home', params: new URLSearchParams(cut < 0 ? '' : raw.slice(cut + 1)) };
+    }
+    // Filters live in the address, so a page can be bookmarked or opened in a new tab.
+    function writeHash(view, params) {
+      const q = params.toString();
+      history.replaceState(null, '', '#' + view + (q ? '?' + q : ''));
+    }
+
+    function route() {
+      if (!STATE.token) return;
+      const { view, params } = parseHash();
+      const changed = STATE.view !== view;
+      STATE.view = view;
+      renderNav();
+      VIEWS[view].open(params);
+      if (changed) window.scrollTo({ top: 0 });
+    }
+    window.addEventListener('hashchange', route);
+    function reload() { const v = VIEWS[STATE.view]; return v ? v.reload() : Promise.resolve(); }
+
+    // ---- small shared pieces --------------------------------------------------------------
+    // replaceChildren() would print null/false as text; optional pieces are written as `cond ? el : null`.
+    const fill = (el, ...kids) => el.replaceChildren(...kids.flat().filter(k => k !== null && k !== undefined && k !== false));
+    const money = n => VND(Number(n) || 0) + '₫';
+    const toDate = ts => (ts ? new Date(String(ts).replace(' ', 'T') + 'Z') : null);   // SQLite times are UTC
+    const VN = { timeZone: 'Asia/Ho_Chi_Minh' };
+    // Built from parts so dates always read 22/10 (some browsers print 22-10 for vi-VN).
+    const partsOf = (d, tz) => Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: tz, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
+      .formatToParts(d).map(x => [x.type, x.value]));
+    const fmtTime = { format: d => { const p = partsOf(d, VN.timeZone); return p.hour + ':' + p.minute + ' ' + p.day + '/' + p.month; } };
+    const fmtFull = { format: d => { const p = partsOf(d, VN.timeZone); return p.hour + ':' + p.minute + ' ' + p.day + '/' + p.month + '/' + p.year; } };
+    const fmtDay = { format: d => { const p = partsOf(d, 'UTC'); return p.day + '/' + p.month; } };
+    const fmtWeekday = new Intl.DateTimeFormat('vi-VN', { weekday: 'short', timeZone: 'UTC' });
+    const dayDate = d => new Date(d + 'T00:00:00Z');    // 'YYYY-MM-DD' (already a Vietnam day)
+
+    function duration(ms) {
+      const min = Math.max(1, Math.round(ms / 60000));
+      if (min < 60) return min + ' phút';
+      const hrs = Math.floor(min / 60);
+      if (hrs < 24) return hrs + ' giờ' + (min % 60 && hrs < 6 ? ' ' + (min % 60) + ' phút' : '');
+      return Math.floor(hrs / 24) + ' ngày' + (hrs % 24 ? ' ' + (hrs % 24) + ' giờ' : '');
+    }
+    function ago(ts) {
+      const d = toDate(ts); if (!d || isNaN(d)) return '';
+      const ms = Date.now() - d.getTime();
+      if (ms < 60000) return 'Vừa xong';
+      if (ms < 86400000) return duration(ms) + ' trước';
+      return fmtTime.format(d);
+    }
+    function deadlineLine(o) {
+      if (!o.deadline) return null;
+      const d = toDate(o.deadline);
+      const left = d.getTime() - Date.now();
+      if (left <= 0) return h('div', { class: 'due is-late', title: 'Hạn gửi ' + fmtFull.format(d) }, 'Quá hạn gửi ' + duration(-left));
+      return h('div', { class: 'due' + (left < 6 * 3600000 ? ' is-soon' : ''), title: 'Hạn gửi ' + fmtFull.format(d) },
+        'Gửi trước ' + fmtTime.format(d) + ' (còn ' + duration(left) + ')');
+    }
+    const shipLabel = m => (m === 'express' ? 'Giao nhanh 24h' : 'Tiêu chuẩn');
+    const badge = (status, label) => h('span', { class: 'badge s-' + status }, label);
+
+    function pageHead(title, ...actions) {
+      return h('div', { class: 'page-head' }, h('h1', null, title), h('div', { class: 'page-actions no-print' }, ...actions));
+    }
+    // `filter`: outline it when it narrows the list (any value but the first option).
+    function selectBox(label, options, value, onChange, filter) {
+      const el = h('select', { class: 'select' + (filter && value !== options[0][0] ? ' is-set' : ''), 'aria-label': label },
+        ...options.map(([v, text]) => h('option', { value: v }, text)));
+      el.value = value;
+      el.addEventListener('change', () => onChange(el.value));
+      return el;
+    }
+    function errorBox(message, retry) {
+      return h('div', { class: 'empty' }, h('p', null, message), h('button', { class: 'btn', type: 'button', onclick: retry }, 'Thử lại'));
+    }
+    function stat({ label, value, sub, alert, subAlert, href, onclick, pressed, title }) {
+      const tag = href ? 'a' : 'button';
+      return h(tag, { class: 'stat', href: href || null, type: href ? null : 'button', onclick: onclick || null, title: title || null,
+        'aria-pressed': pressed === undefined ? null : String(pressed) },
+        h('span', { class: 'stat-label' }, label, icon('chevron')),
+        h('strong', { class: 'stat-value' + (alert ? ' is-alert' : '') }, value),
+        sub ? h('span', { class: 'stat-sub' + (subAlert ? ' is-alert' : '') }, subAlert ? icon('alert') : null, sub) : h('span', { class: 'stat-sub' }, '\u00a0'));
+    }
+
+    // ==========================================================================================
+    // Trang chủ: what needs doing + how the shop is doing
+    // ==========================================================================================
+    const HOME = { days: 7, seq: 0 };
+    const PERIODS = [['1', 'Hôm nay'], ['7', '7 ngày qua'], ['30', '30 ngày qua']];
+    const periodWord = d => (d === 1 ? 'hôm nay' : d + ' ngày');
+
+    function openHome() {
+      fill($('#view'), 
+        pageHead('Trang chủ', h('button', { class: 'btn icon-only', type: 'button', title: 'Tải lại số liệu', 'aria-label': 'Tải lại số liệu', onclick: () => loadHome() }, icon('refresh'))),
+        h('section', { class: 'panel', id: 'todo', 'aria-label': 'Việc cần làm' }, h('p', { class: 'panel-empty' }, 'Đang tải…')),
+        h('section', { class: 'panel', id: 'perf', 'aria-labelledby': 'perf-title' }));
+      return loadHome();
+    }
+
+    async function loadHome() {
+      const seq = ++HOME.seq;
+      try {
+        const d = await api('/dashboard?days=' + HOME.days);
+        if (seq !== HOME.seq || STATE.view !== 'home') return;
+        setOrdersBadge(d.todo.to_ship); setCasesBadge(d.todo.cases_open);
+        renderTodo(d); renderPerf(d);
+      } catch (e) {
+        if (seq !== HOME.seq || !STATE.token || STATE.view !== 'home') return;
+        fill($('#todo'), errorBox(e.message, loadHome));
+        fill($('#perf'), );
+      }
+    }
+
+    function renderTodo(d) {
+      const t = d.todo, inv = d.inventory, p = periodWord(d.period.days);
+      fill($('#todo'), h('div', { class: 'stat-row' },
+        stat({ label: 'Đơn cần gửi', value: t.to_ship, href: '#orders?tab=to_ship',
+          sub: t.express ? 'Giao nhanh 24h: ' + t.express : 'Không có đơn giao nhanh', subAlert: t.express > 0 }),
+        stat({ label: 'Quá hạn gửi', value: t.overdue, alert: t.overdue > 0, href: '#orders?tab=to_ship&due=overdue',
+          sub: 'Đến hạn trong 24 giờ: ' + t.due_24h, subAlert: t.due_24h > 0 }),
+        stat({ label: 'Chờ xác nhận', value: t.unconfirmed, href: '#orders?tab=to_ship&status=pending',
+          sub: 'Đã hủy ' + p + ': ' + t.cancelled }),
+        stat({ label: 'Giao không thành công', value: t.failed, alert: t.failed > 0, href: '#orders?tab=failed',
+          sub: 'Trả hàng ' + p + ': ' + t.returned }),
+        stat({ label: 'Sự cố đang mở', value: t.cases_open, alert: t.cases_untouched > 0 || t.cases_overdue > 0,
+          href: t.cases_untouched ? '#cases?flag=untouched' : t.cases_overdue ? '#cases?flag=overdue' : '#cases',
+          sub: t.cases_untouched ? 'Khách gửi chưa xử lý: ' + t.cases_untouched : 'Quá hạn xử lý: ' + t.cases_overdue,
+          subAlert: t.cases_untouched > 0 || t.cases_overdue > 0 }),
+        stat({ label: 'Sắp hết hàng', value: inv.low, href: inv.out ? '#inventory' : '#products?status=low',
+          sub: inv.out ? 'Hết hàng: ' + inv.out : 'Không có đĩa hết hàng', subAlert: inv.out > 0 })));
+    }
+
+    function delta(cur, prev) {
+      if (!prev) return cur ? h('span', { class: 'delta up' }, 'Mới có số liệu') : h('span', { class: 'delta flat' }, 'Chưa có số liệu');
+      const pct = (cur - prev) / prev * 100;
+      if (Math.abs(pct) < 0.005) return h('span', { class: 'delta flat' }, 'Không đổi');
+      const up = pct > 0;
+      return h('span', { class: 'delta ' + (up ? 'up' : 'down') }, icon(up ? 'up' : 'down'),
+        Math.abs(pct).toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%');
+    }
+
+    function renderPerf(d) {
+      const m = d.metrics, per = d.period;
+      const updated = toDate(d.updated_at);
+      const METRICS = [
+        ['GMV', money(m.gmv.value), m.gmv, 'Tổng tiền hàng của các đơn không bị hủy, chưa tính phí vận chuyển.', '#orders?tab=all'],
+        ['Khách hàng', VND(m.customers.value), m.customers, 'Số người mua khác nhau (theo số điện thoại).', '#orders?tab=all'],
+        ['Đơn hàng SKU', VND(m.sku_orders.value), m.sku_orders, 'Số dòng sản phẩm trong các đơn không bị hủy (' + VND(m.units.value) + ' bản đĩa).', '#orders?tab=all'],
+        ['Khách truy cập', VND(m.visitors.value), m.visitors, 'Số trình duyệt khác nhau đã mở cửa hàng.', null]
+      ];
+      const range = (a, b) => (a === b ? fmtDay.format(dayDate(a)) : fmtDay.format(dayDate(a)) + ' – ' + fmtDay.format(dayDate(b)));
+      fill($('#perf'), 
+        h('div', { class: 'panel-head' },
+          h('div', null, h('h2', { id: 'perf-title' }, 'Hiệu quả kinh doanh'), h('p', { class: 'hint' }, range(per.start, per.end))),
+          h('div', { class: 'panel-note' },
+            selectBox('Khoảng thời gian', PERIODS, String(HOME.days), v => { HOME.days = Number(v); loadHome(); }),
+            h('span', null, 'Cập nhật lúc ' + fmtTime.format(updated)))),
+        h('div', { class: 'metrics' }, ...METRICS.map(([label, value, pair, help, href]) => h('div', null,
+          href ? h('a', { class: 'metric-label', href, title: help, style: 'text-decoration:none' }, label, icon('chevron'))
+               : h('span', { class: 'metric-label', title: help }, label),
+          h('div', { class: 'metric-value' }, value),
+          delta(pair.value, pair.previous)))),
+        h('p', { class: 'compare' }, 'So với ' + range(per.previous_start, per.previous_end) + '. Di chuột vào tên chỉ số để xem cách tính.'),
+        per.days > 1 ? h('div', { class: 'split', style: 'margin-top:24px' }, chartBlock(d.daily), topBlock(d.top_products)) : h('div', { style: 'margin-top:24px' }, topBlock(d.top_products)));
+    }
+
+    function chartBlock(daily) {
+      const max = Math.max(1, ...daily.map(x => x.gmv));
+      const total = daily.reduce((a, x) => a + x.gmv, 0);
+      const orders = daily.reduce((a, x) => a + x.orders, 0);
+      const readout = h('p', { class: 'chart-readout', 'aria-live': 'polite' });
+      const showAll = () => fill(readout, 'Cả kỳ: ', h('b', null, money(total)), ', ' + orders + ' đơn');
+      showAll();
+      const every = daily.length > 10 ? 5 : 1;
+      const bars = h('div', { class: 'bars', role: 'group', 'aria-label': 'Doanh thu theo ngày' }, ...daily.map((x, i) => {
+        const label = fmtWeekday.format(dayDate(x.day)) + ' ' + fmtDay.format(dayDate(x.day));
+        const text = label + ': ' + money(x.gmv) + ', ' + x.orders + ' đơn';
+        const bar = h('div', { class: 'bar' + (x.gmv ? '' : ' is-zero') + (i === daily.length - 1 ? ' is-today' : ''), tabindex: '0', title: text, 'aria-label': text,
+          style: 'height:' + (x.gmv ? Math.max(3, x.gmv / max * 100) : 1) + '%' });
+        const show = () => fill(readout, label + ': ', h('b', null, money(x.gmv)), ', ' + x.orders + ' đơn');
+        bar.addEventListener('mouseenter', show); bar.addEventListener('focus', show);
+        bar.addEventListener('mouseleave', showAll); bar.addEventListener('blur', showAll);
+        return bar;
+      }));
+      const axis = h('div', { class: 'bar-axis', 'aria-hidden': 'true' }, ...daily.map((x, i) =>
+        h('span', null, (daily.length - 1 - i) % every === 0 ? (daily.length <= 10 ? fmtWeekday.format(dayDate(x.day)) : fmtDay.format(dayDate(x.day))) : '')));
+      return h('div', null, h('h3', { style: 'margin:0 0 4px;font-size:15px' }, 'Doanh thu theo ngày'), readout, bars, axis);
+    }
+
+    function topBlock(items) {
+      return h('div', null, h('h3', { style: 'margin:0 0 8px;font-size:15px' }, 'Bán chạy trong kỳ'),
+        items.length ? h('ol', { class: 'top-list' }, ...items.map(t => h('li', { class: 'top-item' },
+          cover(t.cover),
+          h('div', { style: 'min-width:0' }, h('div', { class: 'title clip' }, t.title), h('div', { class: 'small clip' }, t.artist)),
+          h('div', { class: 'num' }, t.qty + ' bản', h('div', { class: 'small', style: 'font-weight:400' }, money(t.revenue))))))
+          : h('p', { class: 'panel-empty' }, 'Chưa bán được đĩa nào trong kỳ này.'));
+    }
+
+    // ==========================================================================================
+    // Đơn hàng
+    // ==========================================================================================
+    const TABS = [['all', 'Tất cả'], ['to_ship', 'Cần gửi'], ['shipping', 'Đang giao'], ['completed', 'Đã giao'],
+      ['failed', 'Giao không thành công'], ['lost', 'Thất lạc'], ['returned', 'Đã trả hàng'], ['cancelled', 'Đã hủy']];
+    const ORD_DEFAULTS = { tab: 'to_ship', q: '', shipping: '', payment: '', due: '', status: '', sort: '', page: 1, per_page: 20 };
+    const ORD = Object.assign({ seq: 0, data: null, selected: new Set() }, ORD_DEFAULTS);
+    const sortOf = () => ORD.sort || (ORD.tab === 'to_ship' ? 'deadline' : 'newest');
+    // Moves that change stock or tell the customer something went wrong get a confirmation first.
+    const CONFIRM = {
+      cancelled: no => 'Hủy đơn ' + no + '?\nCác bản đĩa trong đơn sẽ được cộng lại vào tồn kho.',
+      returned: no => 'Xác nhận đã nhận lại hàng của đơn ' + no + '?\nCác bản đĩa sẽ được cộng lại vào tồn kho.',
+      failed: no => 'Đánh dấu đơn ' + no + ' giao không thành công?',
+      lost: no => 'Ghi nhận đơn ' + no + ' bị thất lạc?\nĐĩa không được cộng lại kho. Nên tạo sự cố để theo dõi khiếu nại và bồi thường.'
+    };
+    // Read as "Đơn BUI-… đã xác nhận." / "3 đơn đã xác nhận."
+    const DONE = {
+      confirmed: 'đã xác nhận', shipping: 'đã chuyển sang Đang giao', completed: 'đã giao xong',
+      failed: 'được ghi nhận giao không thành công', returned: 'đã nhận hàng trả về, tồn kho đã được cộng lại',
+      cancelled: 'đã hủy, tồn kho đã được cộng lại', lost: 'đã ghi nhận thất lạc'
+    };
+    const BULK = [['confirmed', 'Xác nhận'], ['shipping', 'Đã gửi hàng'], ['completed', 'Đã giao xong']];
+
+    function openOrders(params) {
+      Object.assign(ORD, ORD_DEFAULTS);
+      for (const k of Object.keys(ORD_DEFAULTS)) if (params.has(k)) ORD[k] = k === 'page' ? Math.max(1, parseInt(params.get(k), 10) || 1) : params.get(k);
+      if (!TABS.some(([k]) => k === ORD.tab)) ORD.tab = 'to_ship';
+      ORD.per_page = [20, 50, 100].includes(Number(ORD.per_page)) ? Number(ORD.per_page) : 20;
+      ORD.selected = new Set();
+
+      const search = h('input', { class: 'field', type: 'search', autocomplete: 'off', value: ORD.q, id: 'oq',
+        placeholder: 'Mã đơn, tên khách, số điện thoại, tên đĩa', 'aria-label': 'Tìm đơn hàng' });
+      let timer;
+      const go = () => { clearTimeout(timer); ORD.q = search.value.trim(); ORD.page = 1; loadOrders(); };
+      search.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(go, 350); });
+      search.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+      fill($('#view'), 
+        pageHead('Quản lý đơn hàng', search,
+          h('button', { class: 'btn', type: 'button', onclick: exportOrders, title: 'Tải danh sách đơn đang lọc về máy (mở được bằng Excel)' }, 'Xuất CSV'),
+          h('button', { class: 'btn icon-only', type: 'button', title: 'Tải lại', 'aria-label': 'Tải lại danh sách đơn', onclick: () => loadOrders() }, icon('refresh'))),
+        h('section', { class: 'panel', id: 'ord-summary', 'aria-label': 'Tình hình gửi hàng' }, h('p', { class: 'panel-empty' }, 'Đang tải…')),
+        h('section', { class: 'panel', style: 'padding-top:6px' },
+          h('div', { class: 'tabs', id: 'ord-tabs', role: 'tablist', 'aria-label': 'Nhóm đơn hàng' }),
+          h('div', { class: 'filterbar', id: 'ord-filters' }),
+          h('div', { id: 'ord-bulk' }),
+          h('div', { class: 'table', id: 'ord-table' }),
+          h('div', { class: 'pager', id: 'ord-pager' })));
+      return loadOrders();
+    }
+
+    function ordParams() {
+      const p = new URLSearchParams();
+      for (const k of Object.keys(ORD_DEFAULTS)) if (String(ORD[k]) !== String(ORD_DEFAULTS[k])) p.set(k, ORD[k]);
+      return p;
+    }
+    function ordQuery(extra) {
+      const p = new URLSearchParams({ tab: ORD.tab, sort: sortOf(), page: ORD.page, per_page: ORD.per_page });
+      ['q', 'shipping', 'payment', 'due', 'status'].forEach(k => { if (ORD[k]) p.set(k, ORD[k]); });
+      Object.entries(extra || {}).forEach(([k, v]) => p.set(k, v));
+      return p;
+    }
+
+    async function loadOrders() {
+      const seq = ++ORD.seq;
+      writeHash('orders', ordParams());
+      const table = $('#ord-table');
+      if (table) table.classList.add('is-loading');
+      try {
+        const d = await api('/orders?' + ordQuery());
+        if (seq !== ORD.seq || STATE.view !== 'orders') return;
+        ORD.data = d; ORD.page = d.pagination.page;
+        ORD.selected = new Set([...ORD.selected].filter(no => d.orders.some(o => o.order_no === no)));
+        setOrdersBadge(d.summary.to_ship);
+        renderOrderSummary(); renderOrderTabs(); renderOrderFilters(); renderOrderTable(); renderOrderPager(); renderBulk();
+      } catch (e) {
+        if (seq !== ORD.seq || !STATE.token || STATE.view !== 'orders') return;
+        if (table) { table.classList.remove('is-loading'); table.replaceChildren(errorBox(e.message, loadOrders)); }
+      }
+    }
+
+    function setOrd(patch) { Object.assign(ORD, { page: 1 }, patch); loadOrders(); }
+
+    function renderOrderSummary() {
+      const s = ORD.data.summary, sla = ORD.data.sla_hours;
+      const is = (tab, extra) => ORD.tab === tab && Object.entries(extra || {}).every(([k, v]) => ORD[k] === v) &&
+        ['due', 'status'].every(k => (extra && k in extra) || !ORD[k]);
+      fill($('#ord-summary'), 
+        h('div', { class: 'stat-row' },
+          stat({ label: 'Đến hạn gửi trong 24 giờ', value: s.due_24h, sub: 'Giao nhanh 24h: ' + s.express, subAlert: s.express > 0,
+            pressed: is('to_ship', { due: 'due_24h' }), onclick: () => setOrd({ tab: 'to_ship', due: 'due_24h', status: '' }) }),
+          stat({ label: 'Quá hạn gửi', value: s.overdue, alert: s.overdue > 0,
+            pressed: is('to_ship', { due: 'overdue' }), onclick: () => setOrd({ tab: 'to_ship', due: 'overdue', status: '' }) }),
+          stat({ label: 'Chờ xác nhận', value: s.unconfirmed,
+            pressed: is('to_ship', { status: 'pending' }), onclick: () => setOrd({ tab: 'to_ship', status: 'pending', due: '' }) }),
+          stat({ label: 'Đang giao', value: s.shipping, pressed: is('shipping'), onclick: () => setOrd({ tab: 'shipping', due: '', status: '' }) }),
+          stat({ label: 'Giao không thành công', value: s.failed, alert: s.failed > 0,
+            pressed: is('failed'), onclick: () => setOrd({ tab: 'failed', due: '', status: '' }) }),
+          stat({ label: 'Đã trả hàng', value: s.returned, pressed: is('returned'), onclick: () => setOrd({ tab: 'returned', due: '', status: '' }) })),
+        h('p', { class: 'strip-foot' }, 'Hạn gửi hàng tính từ lúc khách đặt: giao nhanh ' + sla.express + ' giờ, tiêu chuẩn ' + sla.standard + ' giờ.'));
+    }
+
+    function renderOrderTabs() {
+      const c = ORD.data.counts;
+      fill($('#ord-tabs'), ...TABS.map(([key, label]) => h('button', {
+        class: 'tab', type: 'button', role: 'tab', 'aria-selected': String(ORD.tab === key),
+        onclick: () => { if (ORD.tab !== key) setOrd({ tab: key, due: '', status: '', sort: '' }); }
+      }, label, c[key] ? h('b', null, VND(c[key])) : null)));
+    }
+
+    function renderOrderFilters() {
+      const toShip = ORD.tab === 'to_ship';
+      const any = ORD.q || ORD.shipping || ORD.payment || ORD.due || ORD.status || ORD.sort;
+      const n = ORD.data.pagination.items;
+      fill($('#ord-filters'), 
+        selectBox('Cách giao hàng', [['', 'Mọi cách giao'], ['express', 'Giao nhanh 24h'], ['standard', 'Tiêu chuẩn']], ORD.shipping, v => setOrd({ shipping: v }), true),
+        selectBox('Thanh toán', [['', 'Mọi cách thanh toán'], ['cod', 'Thanh toán khi nhận hàng'], ['bank', 'Chuyển khoản'], ['momo', 'Momo'], ['zalopay', 'ZaloPay'], ['card', 'Thẻ tín dụng / ghi nợ']], ORD.payment, v => setOrd({ payment: v }), true),
+        toShip ? selectBox('Giai đoạn', [['', 'Chờ xác nhận và chờ gửi'], ['pending', 'Chờ xác nhận'], ['confirmed', 'Chờ gửi hàng']], ORD.status, v => setOrd({ status: v }), true) : null,
+        toShip ? selectBox('Hạn gửi', [['', 'Mọi hạn gửi'], ['overdue', 'Đã quá hạn'], ['due_24h', 'Đến hạn trong 24 giờ']], ORD.due, v => setOrd({ due: v }), true) : null,
+        selectBox('Sắp xếp', (toShip ? [['deadline', 'Hạn gửi gần nhất']] : []).concat([['newest', 'Mới nhất'], ['oldest', 'Cũ nhất'], ['total_desc', 'Giá trị cao nhất']]), sortOf(),
+          v => setOrd({ sort: v === (toShip ? 'deadline' : 'newest') ? '' : v })),
+        any ? h('button', { class: 'btn btn-sm', type: 'button', onclick: () => { const q = $('#oq'); if (q) q.value = ''; setOrd({ q: '', shipping: '', payment: '', due: '', status: '', sort: '' }); } }, 'Bỏ lọc') : null,
+        h('span', { class: 'found' }, n ? 'Tìm thấy ' + VND(n) + ' đơn hàng' : ''));
+    }
+
+    function renderBulk() {
+      const box = $('#ord-bulk');
+      const picked = (ORD.data ? ORD.data.orders : []).filter(o => ORD.selected.has(o.order_no));
+      if (!picked.length) { fill(box, ); return; }
+      const buttons = BULK.map(([status, label]) => {
+        const ok = picked.filter(o => o.actions.some(a => a.status === status));
+        return ok.length ? h('button', { class: 'btn btn-sm' + (ok.length === picked.length ? ' btn-primary' : ''), type: 'button',
+          onclick: () => bulkMove(ok.map(o => o.order_no), status) }, label + ' ' + ok.length + ' đơn') : null;
+      }).filter(Boolean);
+      fill(box, h('div', { class: 'bulkbar', role: 'region', 'aria-label': 'Thao tác hàng loạt' },
+        h('b', null, 'Đã chọn ' + picked.length + ' đơn'),
+        ...(buttons.length ? buttons : [h('span', { class: 'small' }, 'Các đơn đã chọn không có bước chung để làm tiếp.')]),
+        h('button', { class: 'link-btn', type: 'button', onclick: () => { ORD.selected.clear(); renderOrderTable(); renderBulk(); } }, 'Bỏ chọn')));
+    }
+
+    async function bulkMove(nos, status) {
+      const bar = $('.bulkbar'); if (bar) bar.querySelectorAll('button').forEach(b => { b.disabled = true; });
+      try {
+        const r = await api('/orders/bulk', { method: 'POST', body: { order_nos: nos, status } });
+        ORD.selected.clear();
+        if (r.failed.length) toast(r.updated.length + ' đơn đã cập nhật. ' + r.failed.length + ' đơn không đổi được: ' + r.failed[0].order_no + ' (' + r.failed[0].error + ')', true);
+        else toast(r.updated.length + ' đơn ' + DONE[status] + '.');
+      } catch (e) { if (STATE.token) toast(e.message, true); }
+      await loadOrders();
+    }
+
+    function renderOrderTable() {
+      const box = $('#ord-table'); box.classList.remove('is-loading');
+      const list = ORD.data.orders;
+      if (!list.length) {
+        const filtered = ORD.q || ORD.shipping || ORD.payment || ORD.due || ORD.status;
+        fill(box, h('div', { class: 'empty' }, h('p', null,
+          filtered ? 'Không có đơn nào khớp bộ lọc. Thử bỏ bớt điều kiện hoặc đổi từ khóa.'
+            : ORD.tab === 'to_ship' ? 'Không còn đơn nào cần gửi. Đơn mới sẽ hiện ở đây ngay khi khách đặt.' : 'Chưa có đơn hàng nào trong nhóm này.')));
+        return;
+      }
+      const all = h('input', { type: 'checkbox', 'aria-label': 'Chọn tất cả đơn trên trang', checked: list.every(o => ORD.selected.has(o.order_no)) });
+      all.addEventListener('change', () => { list.forEach(o => (all.checked ? ORD.selected.add(o.order_no) : ORD.selected.delete(o.order_no))); renderOrderTable(); renderBulk(); });
+      fill(box, 
+        h('div', { class: 'othead', role: 'row' }, all, h('span', null, 'Đơn hàng'), h('span', null, 'Khách hàng'), h('span', null, 'Mặt hàng'),
+          h('span', null, 'Trạng thái'), h('span', null, 'Vận chuyển'), h('span', { class: 'num' }, 'Tổng'), h('span')),
+        ...list.map(orderRow));
+    }
+
+    function orderRow(o) {
+      const sel = ORD.selected.has(o.order_no);
+      const check = h('input', { type: 'checkbox', checked: sel, 'aria-label': 'Chọn đơn ' + o.order_no });
+      check.addEventListener('click', e => e.stopPropagation());
+      check.addEventListener('change', () => { check.checked ? ORD.selected.add(o.order_no) : ORD.selected.delete(o.order_no); renderOrderTable(); renderBulk(); });
+      const next = o.actions.find(a => !CONFIRM[a.status]);
+      const created = toDate(o.created_at);
+      const row = h('div', { class: 'orow' + (sel ? ' is-selected' : o.overdue ? ' is-late' : ''), role: 'row' },
+        h('div', { class: 'c-chk' }, check),
+        h('div', { class: 'c-no' }, h('button', { class: 'ord-no', type: 'button', onclick: e => { e.stopPropagation(); openOrder(o.order_no); } }, o.order_no),
+          h('div', { class: 'small', title: created ? fmtFull.format(created) : '' }, ago(o.created_at))),
+        h('div', { class: 'c-cust', style: 'min-width:0' }, h('div', { class: 'clip' }, o.name), h('div', { class: 'small' }, o.phone + (o.city ? ', ' + o.city : ''))),
+        h('div', { class: 'c-items item-cell' }, cover(o.cover),
+          h('div', { style: 'min-width:0' }, h('div', { class: 'clip', title: o.first_title }, o.first_title),
+            h('div', { class: 'small' }, (o.lines > 1 ? 'và ' + (o.lines - 1) + ' mặt hàng khác, ' : '') + o.units + ' bản'))),
+        h('div', { class: 'c-status' }, badge(o.status, o.status_label), deadlineLine(o),
+          o.open_cases ? h('div', { class: 'due is-soon' }, o.open_cases + ' sự cố đang mở') : null,
+          o.is_reship ? h('div', { class: 'small' }, 'Đơn gửi bù') : null),
+        h('div', { class: 'c-ship' }, h('div', null, shipLabel(o.shipping_method)), h('div', { class: 'small' }, o.payment_label)),
+        h('div', { class: 'c-total num' }, money(o.total)),
+        h('div', { class: 'c-act' }, next ? h('button', { class: 'btn btn-sm btn-primary', type: 'button',
+          onclick: e => { e.stopPropagation(); moveOrder(o.order_no, next.status, e.currentTarget); } }, next.label) : null));
+      row.addEventListener('click', () => openOrder(o.order_no));
+      return row;
+    }
+
+    function renderTotalsList(d) {
+      const rows = [['Tạm tính', money(d.subtotal)], ['Phí vận chuyển', d.shipping_fee ? money(d.shipping_fee) : 'Miễn phí']];
+      return h('dl', { class: 'od-sum' }, ...rows.flatMap(([a, b]) => [h('dt', null, a), h('dd', null, b)]),
+        h('dt', { class: 'total' }, 'Khách trả'), h('dd', { class: 'total' }, money(d.total)));
+    }
+
+    // A return asks how the copies came back: only intact copies go back on sale.
+    function askReturnCondition(no) {
+      return new Promise(resolve => {
+        let answered = false;
+        const pick = v => { answered = true; m.close(); resolve(v); };
+        const body = h('div', null,
+          h('p', null, 'Hàng của đơn ' + no + ' đã về kho. Tình trạng đĩa thế nào?'),
+          h('div', { class: 'choice-list' },
+            h('button', { class: 'choice', type: 'button', onclick: () => pick(true) },
+              h('b', null, 'Nguyên vẹn, bán lại được'), h('span', null, 'Các bản đĩa được cộng lại vào tồn kho.')),
+            h('button', { class: 'choice', type: 'button', onclick: () => pick(false) },
+              h('b', null, 'Vỡ, hỏng, hộp rỗng hoặc không phải hàng shop'), h('span', null, 'Không cộng kho. Nên tạo sự cố hàng hoàn để khiếu nại ĐVVC.'))));
+        const m = openModal('Nhận hàng trả về', body, false, () => { if (!answered) resolve(null); });
+      });
+    }
+
+    async function moveOrder(no, status, btn) {
+      let restock = true;
+      if (status === 'returned') {
+        const ok = await askReturnCondition(no);
+        if (ok === null) return null;
+        restock = ok;
+      } else if (CONFIRM[status] && !confirm(CONFIRM[status](no))) return null;
+      if (btn) btn.disabled = true;
+      try {
+        const d = await api('/orders/' + encodeURIComponent(no), { method: 'PUT', body: { status, restock } });
+        toast('Đơn ' + no + ' ' + (status === 'returned' && !restock ? 'đã nhận hàng trả về, không cộng kho' : DONE[status]) + '.');
+        if (STATE.view === 'orders') loadOrders(); else if (STATE.view !== 'home') reload();
+        return d;
+      } catch (e) {
+        if (btn) btn.disabled = false;
+        if (STATE.token) toast(e.message, true);
+        if (e.status === 409 && STATE.view === 'orders') loadOrders();   // someone else moved it: show the real state
+        return null;
+      }
+    }
+
+    const CARRIERS = ['GHN', 'GHTK', 'J&T Express', 'Viettel Post', 'VNPost', 'Ninja Van', 'BEST Express', 'SPX Express', 'Ahamove', 'Tự giao'];
+
+    function shipmentBox(d, onSaved) {
+      const listId = 'carriers-' + (++modalSeq);
+      const carrier = h('input', { class: 'field', value: d.carrier || '', placeholder: 'Đơn vị vận chuyển', 'aria-label': 'Đơn vị vận chuyển', list: listId, maxlength: 60 });
+      carrier.setAttribute('list', listId);
+      const tracking = h('input', { class: 'field', value: d.tracking_no || '', placeholder: 'Mã vận đơn', 'aria-label': 'Mã vận đơn', maxlength: 60 });
+      const save = h('button', { class: 'btn btn-sm', type: 'button' }, 'Lưu vận đơn');
+      save.addEventListener('click', async () => {
+        save.disabled = true;
+        try {
+          const r = await api('/orders/' + encodeURIComponent(d.order_no) + '/shipment', { method: 'PUT', body: { carrier: carrier.value, tracking_no: tracking.value } });
+          toast('Đã lưu vận đơn của ' + d.order_no + '.'); onSaved(r);
+        } catch (e) { if (STATE.token) toast(e.message, true); save.disabled = false; }
+      });
+      return h('div', { class: 'od-box' }, h('h3', null, 'Vận đơn'),
+        h('datalist', { id: listId }, ...CARRIERS.map(c => h('option', { value: c }))),
+        h('div', { class: 'ship-form' }, carrier, tracking, save),
+        h('p', { class: 'small', style: 'margin-top:6px' }, 'Cần mã vận đơn khi tra hành trình hoặc khiếu nại ĐVVC.'));
+    }
+
+    function openOrder(no) {
+      const body = h('div', null, h('p', { class: 'hint' }, 'Đang tải đơn hàng…'));
+      const m = openModal('Đơn ' + no, body, true);
+      const show = d => {
+        const created = toDate(d.created_at), updated = toDate(d.updated_at);
+        const copy = h('button', { class: 'btn btn-sm', type: 'button', onclick: async () => {
+          const text = [d.name, d.phone, d.address, d.city].filter(Boolean).join('\n');
+          try { await navigator.clipboard.writeText(text); toast('Đã chép thông tin giao hàng.'); } catch (e) { toast('Trình duyệt không cho chép tự động. Hãy bôi đen để chép.', true); }
+        } }, 'Chép thông tin giao hàng');
+        const actions = d.actions.map(a => h('button', {
+          class: 'btn' + (CONFIRM[a.status] || a.status === 'returned' ? ' btn-warn' : ' btn-primary'), type: 'button',
+          onclick: async e => { const r = await moveOrder(no, a.status, e.currentTarget); if (r) show(r); }
+        }, a.label));
+        const related = [
+          d.parent_order_no ? h('p', null, 'Đơn gửi bù cho ', h('button', { class: 'link-btn', type: 'button', onclick: () => openOrder(d.parent_order_no) }, d.parent_order_no), ' (0₫, không tính doanh thu).') : null,
+          d.reships.length ? h('p', null, 'Đã gửi bù bằng đơn: ', ...d.reships.flatMap((r, i) => [i ? ', ' : '', h('button', { class: 'link-btn', type: 'button', onclick: () => openOrder(r) }, r)])) : null
+        ].filter(Boolean);
+        fill(body,
+          h('div', { class: 'od-top' }, badge(d.status, d.status_label), deadlineLine(d) || h('span', { class: 'small' }, d.updated_at ? 'Cập nhật lúc ' + fmtFull.format(updated) : '')),
+          h('p', { class: 'small', style: 'margin:8px 0 0' }, 'Đặt lúc ' + fmtFull.format(created) + (d.has_account ? ' bằng tài khoản ' + (d.email || '') : ', khách không đăng nhập')),
+          related.length ? h('div', { class: 'od-note', style: 'margin:12px 0 0;border-left-color:var(--info)' }, ...related) : null,
+          h('div', { class: 'od-grid' },
+            h('div', { class: 'od-box' }, h('h3', null, 'Giao tới'),
+              h('p', null, h('b', null, d.name)), h('p', null, h('a', { href: 'tel:' + d.phone }, d.phone)),
+              h('p', null, d.address), d.city ? h('p', null, d.city) : null),
+            h('div', { class: 'od-box' }, h('h3', null, 'Vận chuyển và thanh toán'),
+              h('p', null, shipLabel(d.shipping_method)), h('p', null, d.payment_label),
+              d.refunded ? h('p', { style: 'color:var(--low);font-weight:600' }, 'Đã hoàn cho khách ' + money(d.refunded)) : null)),
+          shipmentBox(d, show),
+          d.note ? h('p', { class: 'od-note', style: 'margin-top:12px' }, 'Ghi chú: ', d.note) : null,
+          h('ul', { class: 'od-items', style: 'margin-top:12px' }, ...d.items.map(i => h('li', { class: 'od-item' }, cover(i.cover),
+            h('div', { style: 'min-width:0' }, h('div', { class: 'title' }, i.title), h('div', { class: 'small' }, (i.artist ? i.artist + ', ' : '') + i.qty + ' × ' + money(i.unit_price))),
+            h('div', { class: 'num' }, money(i.line_total))))),
+          renderTotalsList(d),
+          h('div', { class: 'od-cases' },
+            h('div', { class: 'od-cases-head' }, h('h3', null, 'Sự cố của đơn'),
+              h('button', { class: 'btn btn-sm', type: 'button', onclick: () => openCreateCase({ order_no: d.order_no, onCreated: () => api('/orders/' + encodeURIComponent(no)).then(show) }) }, 'Tạo sự cố')),
+            d.cases.length ? h('ul', { class: 'mini-list' }, ...d.cases.map(c => h('li', null,
+              h('button', { class: 'link-btn', type: 'button', onclick: () => openCase(c.code, () => api('/orders/' + encodeURIComponent(no)).then(show)) }, c.code),
+              h('span', null, c.type_label), caseBadge(c.status, c.status_label))))
+              : h('p', { class: 'small', style: 'margin:0' }, 'Chưa có sự cố nào. Khách báo hỏng, thiếu hàng, giao trễ… thì tạo sự cố để theo đúng quy trình.')),
+          h('div', { class: 'modal-actions od-actions' }, h('div', null, copy), h('div', null, ...actions)));
+      };
+      api('/orders/' + encodeURIComponent(no)).then(show).catch(e => {
+        if (!STATE.token) { m.close(); return; }
+        fill(body, h('p', { class: 'form-error' }, e.message));
+      });
+    }
+
+    function renderOrderPager() {
+      const box = $('#ord-pager'), pg = ORD.data.pagination;
+      const go = n => { ORD.page = n; loadOrders(); $('#ord-tabs').scrollIntoView({ block: 'nearest' }); };
+      fill(box, 
+        pg.pages > 1 ? h('button', { class: 'btn', type: 'button', disabled: pg.page <= 1, onclick: () => go(pg.page - 1) }, 'Trang trước') : null,
+        pg.items ? h('span', null, 'Trang ' + pg.page + ' / ' + pg.pages) : null,
+        pg.pages > 1 ? h('button', { class: 'btn', type: 'button', disabled: pg.page >= pg.pages, onclick: () => go(pg.page + 1) }, 'Trang sau') : null,
+        pg.items > 20 ? selectBox('Số đơn mỗi trang', [['20', '20 / trang'], ['50', '50 / trang'], ['100', '100 / trang']], String(ORD.per_page), v => setOrd({ per_page: Number(v) })) : null);
+    }
+
+    async function exportOrders(e) {
+      const btn = e.currentTarget; btn.disabled = true;
+      try {
+        const p = ordQuery(); p.delete('page'); p.delete('per_page'); p.delete('sort');
+        const res = await fetch('/api/admin/orders/export?' + p, { headers: { 'X-Admin-Token': STATE.token } });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (res.status === 403) { signOut(data.error || 'Mã quản trị không đúng.'); return; }
+          throw new Error(data.error || 'Không xuất được danh sách (' + res.status + ').');
+        }
+        const name = (/filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') || '') || [])[1] || 'don-hang.csv';
+        const url = URL.createObjectURL(await res.blob());
+        const a = h('a', { href: url, download: name });
+        document.body.append(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+        toast('Đã xuất ' + name + '.');
+      } catch (err) { toast(err.message || 'Không xuất được danh sách.', true); }
+      btn.disabled = false;
+    }
+
+    // ==========================================================================================
+    // Sản phẩm (the price + stock editor)
+    // ==========================================================================================
+    const FILTERS = [['all', 'Tất cả', 'total'], ['available', 'Còn hàng', 'available'], ['low', 'Sắp hết', 'low'], ['out', 'Hết hàng', 'out'], ['untracked', 'Chưa đếm', 'untracked']];
+
+    function openProducts(params) {
+      const wanted = params.get('status');
+      if (wanted && FILTERS.some(([k]) => k === wanted)) { STATE.status = wanted; STATE.page = 1; }
+      const search = h('input', { class: 'field', id: 'q', type: 'search', autocomplete: 'off', placeholder: 'Tìm theo tên đĩa, nghệ sĩ hoặc mã Discogs', 'aria-label': 'Tìm sản phẩm', value: STATE.search });
+      let timer;
+      search.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => { STATE.search = search.value.trim(); STATE.page = 1; load(); }, 300);
+      });
+      search.addEventListener('keydown', e => { if (e.key === 'Enter') { clearTimeout(timer); STATE.search = search.value.trim(); STATE.page = 1; load(); } });
+      fill($('#view'), 
+        pageHead('Sản phẩm', h('button', { class: 'btn btn-primary', type: 'button', onclick: openAdd }, 'Thêm sản phẩm')),
+        h('div', { class: 'filters', id: 'tabs', role: 'group', 'aria-label': 'Lọc theo tồn kho' }),
+        h('div', { class: 'toolbar' }, h('div', { class: 'search' }, search)),
+        h('div', { class: 'table', id: 'table', role: 'table', 'aria-label': 'Sản phẩm' }),
+        h('div', { class: 'pager', id: 'pager' }));
+      STATE.loaded = false;
+      renderTabs();
+      return load();
+    }
+
+    function renderTabs() {
+      const box = $('#tabs'); if (!box) return;
+      const s = STATE.summary || {};
+      fill(box, ...FILTERS.map(([key, label, field]) => {
+        const attn = key === 'low' && s.low > 0 ? ' is-attn' : (key === 'out' && s.out > 0 ? ' is-attn-out' : '');
+        const chip = h('button', { class: 'chip' + attn, type: 'button', 'aria-pressed': String(STATE.status === key) }, label, h('b', null, s[field] === undefined ? '' : s[field]));
+        chip.addEventListener('click', () => { STATE.status = key; STATE.page = 1; writeHash('products', new URLSearchParams(key === 'all' ? '' : 'status=' + key)); load(); });
+        return chip;
+      }));
+    }
+
+    function renderTable() {
+      const box = $('#table'); if (!box) return;
+      box.classList.toggle('is-loading', STATE.loading && STATE.loaded);
+      if (!STATE.loaded) { fill(box, h('div', { class: 'empty' }, h('p', null, STATE.loadError || 'Đang tải…'))); return; }
+      if (STATE.loadError) { fill(box, h('div', { class: 'empty' }, h('p', null, STATE.loadError), h('button', { class: 'btn', type: 'button', onclick: load }, 'Thử lại'))); return; }
+      if (!STATE.products.length) {
+        const filtered = STATE.search || STATE.status !== 'all';
+        fill(box, h('div', { class: 'empty' },
+          h('p', null, filtered ? 'Không có sản phẩm nào khớp. Thử bỏ bộ lọc hoặc đổi từ khóa.' : 'Cửa hàng chưa có sản phẩm nào. Bấm Thêm sản phẩm để chọn đĩa từ Discogs.'),
+          filtered ? h('button', { class: 'btn', type: 'button', onclick: () => { STATE.status = 'all'; STATE.search = ''; STATE.page = 1; const q = $('#q'); if (q) q.value = ''; writeHash('products', new URLSearchParams()); load(); } }, 'Xóa bộ lọc') : h('button', { class: 'btn btn-primary', type: 'button', onclick: openAdd }, 'Thêm sản phẩm')));
+        return;
+      }
+      fill(box, productHead(), ...STATE.products.map(productRow));
+    }
+    const productHead = () => h('div', { class: 'thead', role: 'row' }, h('span', null, 'Sản phẩm'), h('span', null, 'Giá bán'), h('span', null, 'Tồn kho'), h('span'));
+
+    function renderPager() {
+      const box = $('#pager'); if (!box) return;
+      const pg = STATE.pagination;
+      if (!pg || pg.pages <= 1) { fill(box, ); return; }
+      const go = n => { STATE.page = n; load(); window.scrollTo({ top: 0 }); };
+      fill(box, 
+        h('button', { class: 'btn', type: 'button', disabled: pg.page <= 1, onclick: () => go(pg.page - 1) }, 'Trang trước'),
+        h('span', null, 'Trang ' + pg.page + ' / ' + pg.pages + ', ' + pg.items + ' sản phẩm'),
+        h('button', { class: 'btn', type: 'button', disabled: pg.page >= pg.pages, onclick: () => go(pg.page + 1) }, 'Trang sau'));
+    }
+
+    let loadSeq = 0;
+    async function load() {
+      const seq = ++loadSeq;
+      STATE.loading = true; renderTable();
+      try {
+        const qs = new URLSearchParams({ status: STATE.status, page: String(STATE.page), per_page: '20' });
+        if (STATE.search) qs.set('search', STATE.search);
+        const d = await api('/products?' + qs);
+        if (seq !== loadSeq) return;
+        Object.assign(STATE, { products: d.products, summary: d.summary, pagination: d.pagination, page: d.pagination.page, loaded: true, loadError: '' });
+      } catch (e) {
+        if (seq !== loadSeq || !STATE.token) return;
+        STATE.loadError = e.message;
+      }
+      STATE.loading = false;
+      if (!STATE.token || STATE.view !== 'products') return;
+      renderTabs(); renderTable(); renderPager();
+    }
+
+    // ==========================================================================================
+    // Kho vận: stock on hand, the pick list for unsent orders, what to reorder
+    // ==========================================================================================
+    let invSeq = 0;
+    function openInventory() {
+      fill($('#view'), 
+        pageHead('Kho vận',
+          h('button', { class: 'btn', type: 'button', onclick: () => window.print(), title: 'In danh sách lấy hàng để mang ra kệ' }, 'In danh sách lấy hàng'),
+          h('button', { class: 'btn icon-only', type: 'button', title: 'Tải lại', 'aria-label': 'Tải lại kho vận', onclick: () => loadInventory() }, icon('refresh'))),
+        h('section', { class: 'panel', id: 'inv-stats', 'aria-label': 'Tồn kho' }, h('p', { class: 'panel-empty' }, 'Đang tải…')),
+        h('h2', { class: 'section-title' }, 'Danh sách lấy hàng'),
+        h('p', { class: 'section-hint' }, 'Số bản cần lấy khỏi kệ cho các đơn chưa gửi, đĩa có hạn gửi gần nhất ở trên cùng.'),
+        h('div', { class: 'table', id: 'inv-pick' }),
+        h('div', { class: 'no-print' },
+          h('h2', { class: 'section-title' }, 'Cần nhập thêm'),
+          h('p', { class: 'section-hint' }, 'Đĩa đã hết hoặc còn ít bản. Sửa tồn kho ngay tại đây, hoặc bấm Nhập thêm khi hàng về.'),
+          h('div', { class: 'table', id: 'inv-restock' })));
+      return loadInventory();
+    }
+
+    async function loadInventory() {
+      const seq = ++invSeq;
+      try {
+        const [inv, out, low] = await Promise.all([
+          api('/inventory'), api('/products?status=out&per_page=100'), api('/products?status=low&per_page=100')]);
+        if (seq !== invSeq || STATE.view !== 'inventory') return;
+        const s = inv.summary;
+        setOrdersBadge(s.to_ship);
+        fill($('#inv-stats'), h('div', { class: 'stat-row' },
+          stat({ label: 'Bản đĩa trong kho', value: VND(s.units), sub: s.products + ' sản phẩm đang bán', href: '#products' }),
+          stat({ label: 'Giá trị tồn kho', value: money(s.value), sub: 'Theo giá bán hiện tại', href: '#products?status=available',
+            title: 'Chỉ tính các đĩa có đếm số lượng.' }),
+          stat({ label: 'Sắp hết', value: s.low, sub: 'Còn 1 đến 2 bản', href: '#products?status=low' }),
+          stat({ label: 'Hết hàng', value: s.out, alert: s.out > 0, sub: s.out ? 'Khách không mua được' : 'Không có đĩa hết hàng', subAlert: s.out > 0, href: '#products?status=out' }),
+          stat({ label: 'Chưa đếm số lượng', value: s.untracked, sub: 'Bán không giới hạn số bản', href: '#products?status=untracked' })));
+        renderPickList(inv.picklist, s);
+        const restock = out.products.concat(low.products);
+        const box = $('#inv-restock');
+        fill(box, ...(restock.length ? [productHead(), ...restock.map(productRow)]
+          : [h('div', { class: 'empty' }, h('p', null, 'Mọi đĩa đều còn đủ hàng.'))]));
+      } catch (e) {
+        if (seq !== invSeq || !STATE.token || STATE.view !== 'inventory') return;
+        fill($('#inv-stats'), errorBox(e.message, loadInventory));
+      }
+    }
+
+    function renderPickList(items, s) {
+      const box = $('#inv-pick');
+      if (!items.length) { fill(box, h('div', { class: 'empty' }, h('p', null, 'Không có đơn nào đang chờ gửi, chưa cần lấy hàng.'))); return; }
+      fill(box, 
+        h('div', { class: 'pthead', role: 'row' }, h('span', null, 'Đĩa'), h('span', null, 'Cần lấy'), h('span', null, 'Số đơn'), h('span', null, 'Hạn gửi sớm nhất'), h('span', null, 'Còn bán')),
+        ...items.map(p => {
+          const d = toDate(p.first_deadline), late = d && d.getTime() < Date.now();
+          return h('div', { class: 'prow', role: 'row' },
+            cover(p.cover),
+            h('div', { style: 'min-width:0' }, h('div', { class: 'title' }, p.title), h('div', { class: 'small' }, p.artist)),
+            h('div', null, h('span', { class: 'pick-qty' }, p.qty), ' bản', p.express_qty ? h('div', { class: 'due is-soon', style: 'margin-top:0' }, p.express_qty + ' bản giao nhanh') : null),
+            h('div', null, h('a', { href: '#orders?tab=to_ship&q=' + encodeURIComponent(p.title) }, p.orders + ' đơn')),
+            h('div', { class: 'due' + (late ? ' is-late' : ''), style: 'margin-top:0' }, d ? (late ? 'Quá hạn từ ' : '') + fmtTime.format(d) : ''),
+            h('div', { class: 'small' }, p.stock === null ? 'Không đếm' : p.stock + ' bản'));
+        }));
+      box.prepend(h('div', { class: 'small', style: 'padding:10px 18px;border-bottom:1px solid var(--line)' },
+        'Tổng ' + items.reduce((a, p) => a + p.qty, 0) + ' bản cho ' + s.to_ship + ' đơn chưa gửi' + (s.overdue ? ', trong đó ' + s.overdue + ' đơn đã quá hạn.' : '.')));
+    }
+
+    // ==========================================================================================
+    // ==========================================================================================
+    // Sự cố: customer cancel / return requests and shipping, return, carrier, money incidents
+    // ==========================================================================================
+    let CASEMETA = null;
+    async function caseMeta() { if (!CASEMETA) CASEMETA = await api('/cases/meta'); return CASEMETA; }
+    const groupLabel = g => ((CASEMETA && CASEMETA.groups.find(x => x.key === g)) || {}).label || '';
+    const caseBadge = (status, label) => h('span', { class: 'badge cs-' + status }, label);
+    const CASE_TABS = [['active', 'Đang mở'], ['open', 'Cần xử lý'], ['waiting_carrier', 'Chờ ĐVVC'], ['waiting_customer', 'Chờ khách'],
+      ['resolved', 'Đã xong'], ['rejected', 'Đã từ chối'], ['all', 'Tất cả']];
+    const CS_DEFAULTS = { tab: 'active', group: '', type: '', source: '', flag: '', q: '', page: 1 };
+    const CS = Object.assign({ seq: 0, data: null }, CS_DEFAULTS);
+    const ACTOR = { shop: 'Shop', customer: 'Khách', system: 'Hệ thống' };
+    // Types where the parcel usually comes back unsellable: the "receive return" form starts on "không cộng kho".
+    const DAMAGED_RETURN_TYPES = ['return_broken', 'return_empty_box', 'return_wrong_item'];
+
+    function dueLine(c) {
+      if (!c.due_at || !['open', 'waiting_carrier', 'waiting_customer'].includes(c.status)) return null;
+      const d = toDate(c.due_at), left = d.getTime() - Date.now();
+      const what = c.status === 'waiting_carrier' ? 'kiểm tra lại' : 'xử lý';
+      return left <= 0
+        ? h('div', { class: 'due is-late' }, 'Quá hạn ' + what + ' ' + duration(-left))
+        : h('div', { class: 'due' + (left < 6 * 3600000 ? ' is-soon' : '') }, 'Hạn ' + what + ' ' + fmtTime.format(d));
+    }
+
+    async function openCases(params) {
+      Object.assign(CS, CS_DEFAULTS);
+      for (const k of Object.keys(CS_DEFAULTS)) if (params.has(k)) CS[k] = k === 'page' ? Math.max(1, parseInt(params.get(k), 10) || 1) : params.get(k);
+      if (!CASE_TABS.some(([k]) => k === CS.tab)) CS.tab = 'active';
+      const search = h('input', { class: 'field', type: 'search', autocomplete: 'off', value: CS.q, id: 'cq',
+        placeholder: 'Mã sự cố, mã đơn, tên, SĐT, mã vận đơn', 'aria-label': 'Tìm sự cố' });
+      let timer;
+      const go = () => { clearTimeout(timer); CS.q = search.value.trim(); CS.page = 1; loadCases(); };
+      search.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(go, 350); });
+      search.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+      fill($('#view'),
+        pageHead('Sự cố đơn hàng', search,
+          h('button', { class: 'btn btn-primary', type: 'button', onclick: () => openCreateCase({ onCreated: () => loadCases() }) }, 'Tạo sự cố'),
+          h('button', { class: 'btn icon-only', type: 'button', title: 'Tải lại', 'aria-label': 'Tải lại danh sách sự cố', onclick: () => loadCases() }, icon('refresh'))),
+        h('section', { class: 'panel', id: 'cs-summary', 'aria-label': 'Tình hình sự cố' }, h('p', { class: 'panel-empty' }, 'Đang tải…')),
+        h('section', { class: 'panel', style: 'padding-top:6px' },
+          h('div', { class: 'tabs', id: 'cs-tabs', role: 'tablist', 'aria-label': 'Trạng thái sự cố' }),
+          h('div', { class: 'filterbar', id: 'cs-filters' }),
+          h('div', { class: 'table', id: 'cs-table' }),
+          h('div', { class: 'pager', id: 'cs-pager' })));
+      try { await caseMeta(); } catch (e) { if (STATE.token) fill($('#cs-table'), errorBox(e.message, () => openCases(params))); return; }
+      return loadCases();
+    }
+
+    function csParams() {
+      const p = new URLSearchParams();
+      for (const k of Object.keys(CS_DEFAULTS)) if (String(CS[k]) !== String(CS_DEFAULTS[k])) p.set(k, CS[k]);
+      return p;
+    }
+    function setCs(patch) { Object.assign(CS, { page: 1 }, patch); loadCases(); }
+
+    async function loadCases() {
+      const seq = ++CS.seq;
+      writeHash('cases', csParams());
+      const table = $('#cs-table'); if (table) table.classList.add('is-loading');
+      try {
+        const p = new URLSearchParams({ tab: CS.tab, page: CS.page, per_page: 20 });
+        ['group', 'type', 'source', 'flag', 'q'].forEach(k => { if (CS[k]) p.set(k, CS[k]); });
+        const d = await api('/cases?' + p);
+        if (seq !== CS.seq || STATE.view !== 'cases') return;
+        CS.data = d; CS.page = d.pagination.page;
+        setCasesBadge(d.summary.active);
+        renderCaseSummary(); renderCaseTabs(); renderCaseFilters(); renderCaseTable(); renderCasePager();
+      } catch (e) {
+        if (seq !== CS.seq || !STATE.token || STATE.view !== 'cases') return;
+        if (table) { table.classList.remove('is-loading'); fill(table, errorBox(e.message, loadCases)); }
+      }
+    }
+
+    function renderCaseSummary() {
+      const s = CS.data.summary;
+      const on = (tab, flag) => CS.tab === tab && CS.flag === flag && !CS.group && !CS.type && !CS.source;
+      fill($('#cs-summary'),
+        h('div', { class: 'stat-row' },
+          stat({ label: 'Khách gửi, chưa xử lý', value: s.untouched, alert: s.untouched > 0, pressed: on('active', 'untouched'),
+            sub: 'Trả lời trong 24 giờ', onclick: () => setCs({ tab: 'active', flag: 'untouched', group: '', type: '', source: '' }) }),
+          stat({ label: 'Quá hạn xử lý', value: s.overdue, alert: s.overdue > 0, pressed: on('active', 'overdue'),
+            onclick: () => setCs({ tab: 'active', flag: 'overdue', group: '', type: '', source: '' }) }),
+          stat({ label: 'Cần xử lý', value: s.open, pressed: on('open', ''), onclick: () => setCs({ tab: 'open', flag: '' }) }),
+          stat({ label: 'Chờ ĐVVC', value: s.waiting_carrier, pressed: on('waiting_carrier', ''), onclick: () => setCs({ tab: 'waiting_carrier', flag: '' }) }),
+          stat({ label: 'Chờ khách', value: s.waiting_customer, pressed: on('waiting_customer', ''), onclick: () => setCs({ tab: 'waiting_customer', flag: '' }) }),
+          stat({ label: 'Bồi thường chờ nhận', value: money(s.awaiting_money), pressed: on('active', 'money'),
+            onclick: () => setCs({ tab: 'active', flag: 'money', group: '', type: '', source: '' }) })),
+        h('p', { class: 'strip-foot' }, 'Từ trước tới nay: đã hoàn cho khách ' + money(s.refunded) + ', ĐVVC đã bồi thường ' + money(s.compensated) + '.'));
+    }
+
+    function renderCaseTabs() {
+      const c = CS.data.counts;
+      fill($('#cs-tabs'), ...CASE_TABS.map(([key, label]) => h('button', {
+        class: 'tab', type: 'button', role: 'tab', 'aria-selected': String(CS.tab === key),
+        onclick: () => { if (CS.tab !== key) setCs({ tab: key, flag: '' }); }
+      }, label, c[key] ? h('b', null, VND(c[key])) : null)));
+    }
+
+    function renderCaseFilters() {
+      const types = CASEMETA.types.filter(t => !CS.group || t.group === CS.group);
+      const any = CS.group || CS.type || CS.source || CS.flag || CS.q;
+      const n = CS.data.pagination.items;
+      fill($('#cs-filters'),
+        selectBox('Nhóm tình huống', [['', 'Mọi nhóm']].concat(CASEMETA.groups.map(g => [g.key, g.label])), CS.group, v => setCs({ group: v, type: '' }), true),
+        selectBox('Tình huống', [['', 'Mọi tình huống']].concat(types.map(t => [t.key, t.label])), CS.type, v => setCs({ type: v }), true),
+        selectBox('Nguồn', [['', 'Khách gửi và shop tạo'], ['customer', 'Khách gửi'], ['shop', 'Shop tạo']], CS.source, v => setCs({ source: v }), true),
+        any ? h('button', { class: 'btn btn-sm', type: 'button', onclick: () => { const q = $('#cq'); if (q) q.value = ''; setCs({ group: '', type: '', source: '', flag: '', q: '' }); } }, 'Bỏ lọc') : null,
+        h('span', { class: 'found' }, n ? 'Tìm thấy ' + VND(n) + ' sự cố' : ''));
+    }
+
+    function renderCaseTable() {
+      const box = $('#cs-table'); box.classList.remove('is-loading');
+      const list = CS.data.cases;
+      if (!list.length) {
+        fill(box, h('div', { class: 'empty' }, h('p', null, CS.tab === 'active' && !CS.flag && !CS.q
+          ? 'Không có sự cố nào đang mở. Khi khách gửi yêu cầu hủy, trả hàng hoặc báo lỗi, yêu cầu sẽ hiện ở đây.'
+          : 'Không có sự cố nào khớp bộ lọc.'),
+          h('button', { class: 'btn', type: 'button', onclick: () => openCreateCase({ onCreated: () => loadCases() }) }, 'Tạo sự cố')));
+        return;
+      }
+      fill(box,
+        h('div', { class: 'cthead', role: 'row' }, h('span', null, 'Sự cố'), h('span', null, 'Tình huống'), h('span', null, 'Đơn hàng'),
+          h('span', null, 'Trạng thái'), h('span', { class: 'num' }, 'Tiền')),
+        ...list.map(c => {
+          const created = toDate(c.created_at);
+          const row = h('div', { class: 'crow' + (c.untouched ? ' is-new' : c.overdue ? ' is-late' : ''), role: 'row' },
+            h('div', null, h('button', { class: 'ord-no', type: 'button', onclick: e => { e.stopPropagation(); openCase(c.code, loadCases); } }, c.code),
+              h('div', { class: 'small', title: fmtFull.format(created) }, ago(c.created_at)),
+              h('span', { class: 'src src-' + c.source }, c.source === 'customer' ? 'Khách gửi' : 'Shop tạo'),
+              c.untouched ? h('span', { class: 'src src-new' }, 'Mới') : null),
+            h('div', { style: 'min-width:0' }, h('div', { class: 'title' }, c.type_label), h('div', { class: 'small' }, groupLabel(c.group))),
+            h('div', { style: 'min-width:0' }, c.order_no ? h('div', null, c.order_no) : h('div', { class: 'small' }, 'Không gắn đơn'),
+              c.order_no ? h('div', { class: 'small clip' }, c.customer + (c.order_status_label ? ', ' + c.order_status_label.toLowerCase() : '')) : null),
+            h('div', null, caseBadge(c.status, c.status_label), dueLine(c)),
+            h('div', { class: 'num', style: 'font-weight:400' },
+              c.refunded ? h('div', null, 'Hoàn ' + money(c.refunded)) : null,
+              c.claimed ? h('div', { class: 'small' }, 'Đòi ' + money(c.claimed)) : null,
+              c.compensated ? h('div', { class: 'small', style: 'color:var(--ok)' }, 'Nhận ' + money(c.compensated)) : null,
+              !c.refunded && !c.claimed && !c.compensated ? h('span', { class: 'small' }, '—') : null));
+          row.addEventListener('click', () => openCase(c.code, loadCases));
+          return row;
+        }));
+    }
+
+    function renderCasePager() {
+      const pg = CS.data.pagination;
+      const go = n => { CS.page = n; loadCases(); };
+      fill($('#cs-pager'),
+        pg.pages > 1 ? h('button', { class: 'btn', type: 'button', disabled: pg.page <= 1, onclick: () => go(pg.page - 1) }, 'Trang trước') : null,
+        pg.pages > 1 ? h('span', null, 'Trang ' + pg.page + ' / ' + pg.pages) : null,
+        pg.pages > 1 ? h('button', { class: 'btn', type: 'button', disabled: pg.page >= pg.pages, onclick: () => go(pg.page + 1) }, 'Trang sau') : null);
+    }
+
+    const casesBadge = { n: 0 };
+    function setCasesBadge(n) { if (casesBadge.n !== n) { casesBadge.n = n; renderNav(); } }
+
+    // ---- create -------------------------------------------------------------------------------
+    async function openCreateCase(opts) {
+      opts = opts || {};
+      try { await caseMeta(); } catch (e) { toast(e.message, true); return; }
+      const order = h('input', { class: 'field', value: opts.order_no || '', placeholder: 'BUI-XXXXXXXX', 'aria-label': 'Mã đơn hàng', autocomplete: 'off' });
+      const group = h('select', { class: 'select', 'aria-label': 'Nhóm tình huống', style: 'width:100%' },
+        ...CASEMETA.groups.map(g => h('option', { value: g.key }, g.label)));
+      const type = h('select', { class: 'select', 'aria-label': 'Tình huống', style: 'width:100%' });
+      const steps = h('ol', { class: 'steps-preview' });
+      const detail = h('textarea', { class: 'field', rows: 3, maxlength: 1000, placeholder: 'Khách nói gì, ĐVVC báo gì, bằng chứng đang có (ảnh, video, mã khiếu nại)…' });
+      const error = h('p', { class: 'form-error', role: 'alert' });
+      const ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Tạo sự cố');
+      const fillTypes = () => {
+        const list = CASEMETA.types.filter(t => t.group === group.value);
+        type.replaceChildren(...list.map(t => h('option', { value: t.key }, t.label)));
+        showSteps();
+      };
+      const showSteps = () => {
+        const t = CASEMETA.types.find(x => x.key === type.value);
+        fill(steps, ...(t ? t.steps.map(s => h('li', null, s)) : []));
+        order.placeholder = t && !t.needs_order ? 'Không bắt buộc' : 'BUI-XXXXXXXX';
+      };
+      group.addEventListener('change', fillTypes); type.addEventListener('change', showSteps);
+      fillTypes();
+      const m = openModal('Tạo sự cố', h('div', null,
+        h('label', null, 'Mã đơn hàng', order),
+        h('label', null, 'Nhóm tình huống', group),
+        h('label', null, 'Tình huống', type),
+        h('div', { class: 'steps-box' }, h('b', null, 'Cách xử lý'), steps),
+        h('label', null, 'Mô tả', detail),
+        error, h('div', { class: 'modal-actions' }, h('button', { class: 'btn', type: 'button', onclick: () => m.close() }, 'Hủy'), ok)), true);
+      ok.addEventListener('click', async () => {
+        ok.disabled = true; error.textContent = '';
+        try {
+          const c = await api('/cases', { method: 'POST', body: { order_no: order.value.trim(), type: type.value, detail: detail.value } });
+          m.close(); toast('Đã tạo sự cố ' + c.code + '.');
+          if (opts.onCreated) opts.onCreated(c);
+          openCase(c.code, opts.onCreated);
+        } catch (e) { ok.disabled = false; error.textContent = e.message; }
+      });
+      (opts.order_no ? group : order).focus();
+    }
+
+    // ---- one case ------------------------------------------------------------------------------
+    function openCase(code, onChange) {
+      const body = h('div', null, h('p', { class: 'hint' }, 'Đang tải sự cố…'));
+      const m = openModal('Sự cố ' + code, body, 'xl');
+      let current = null;
+      const changed = () => { if (onChange) onChange(); };
+      const run = async (payload, btn) => {
+        if (btn) btn.disabled = true;
+        try {
+          const d = await api('/cases/' + code + '/actions', { method: 'POST', body: payload });
+          toast(d.message); show(d); changed();
+          return true;
+        } catch (e) { if (btn) btn.disabled = false; if (STATE.token) toast(e.message, true); return false; }
+      };
+
+      const show = c => {
+        current = c;
+        const open = ['open', 'waiting_carrier', 'waiting_customer'].includes(c.status);
+        const o = c.order;
+        const canTellCustomer = !!(o && o.has_account);
+        const formBox = h('div', { class: 'action-form', hidden: true });
+
+        // what the customer asked for
+        const request = c.source === 'customer' ? h('div', { class: 'od-note', style: 'margin:0' },
+          h('b', null, 'Khách báo: ' + (c.reason_label || c.type_label)), c.detail ? h('div', null, c.detail) : null)
+          : (c.detail ? h('div', { class: 'od-note', style: 'margin:0;border-left-color:var(--line-strong)' }, c.detail) : null);
+
+        // the order
+        const orderBox = o ? h('div', { class: 'od-box' },
+          h('h3', null, 'Đơn hàng'),
+          h('p', null, h('button', { class: 'link-btn', type: 'button', onclick: () => openOrder(o.order_no) }, o.order_no), ' ', badge(o.status, o.status_label)),
+          h('p', null, o.name + ', ', h('a', { href: 'tel:' + o.phone }, o.phone)),
+          h('p', { class: 'small' }, o.items.map(i => i.title + ' x' + i.qty).join('; ')),
+          h('p', null, 'Khách trả ' + money(o.total) + ', ' + o.payment_label + (o.refunded ? ', đã hoàn ' + money(o.refunded) : '')),
+          h('p', { class: 'small' }, o.carrier || o.tracking_no ? (o.carrier || 'ĐVVC') + (o.tracking_no ? ', mã ' + o.tracking_no : '') : 'Chưa nhập mã vận đơn'))
+          : h('div', { class: 'od-box' }, h('h3', null, 'Đơn hàng'), h('p', { class: 'small' }, 'Sự cố không gắn với đơn cụ thể.'));
+
+        const moneyBox = h('div', { class: 'od-box' }, h('h3', null, 'Tiền'),
+          h('p', null, 'Đã hoàn khách: ' + money(c.refunded)),
+          h('p', null, 'Yêu cầu bồi thường: ' + money(c.claimed) + (c.carrier_ref ? ' (mã ' + c.carrier_ref + ')' : '')),
+          h('p', null, 'ĐVVC đã bồi thường: ', h('b', { style: c.compensated ? 'color:var(--ok)' : '' }, money(c.compensated))));
+
+        // playbook
+        const done = new Set(c.checklist);
+        const checklist = h('ol', { class: 'checklist' }, ...c.steps.map((s, i) => {
+          const box = h('input', { type: 'checkbox', checked: done.has(i), disabled: !open, id: 'st-' + code + '-' + i });
+          box.addEventListener('change', async () => {
+            box.checked ? done.add(i) : done.delete(i);
+            try { await api('/cases/' + code + '/checklist', { method: 'PUT', body: { done: [...done] } }); }
+            catch (e) { box.checked = !box.checked; if (STATE.token) toast(e.message, true); }
+          });
+          return h('li', null, box, h('label', { for: 'st-' + code + '-' + i }, s));
+        }));
+
+        const actionButtons = open ? c.actions.concat([{ key: 'reject', label: 'Từ chối yêu cầu' }, { key: 'resolve', label: 'Đóng sự cố' }])
+          .filter((a, i, arr) => arr.findIndex(x => x.key === a.key) === i)
+          .filter(a => a.key !== 'reject' || c.source === 'customer')
+          .map(a => h('button', { class: 'btn btn-sm' + (a.key === 'resolve' ? ' btn-primary' : a.key === 'reject' ? ' btn-warn' : ''), type: 'button',
+            onclick: () => actionForm(a.key, formBox) }, a.label)) : [];
+
+        const statusSel = open ? selectBox('Trạng thái sự cố', [['open', 'Cần xử lý'], ['waiting_carrier', 'Chờ ĐVVC'], ['waiting_customer', 'Chờ khách']], c.status,
+          v => run({ action: 'set_status', status: v })) : h('button', { class: 'btn btn-sm', type: 'button', onclick: e => run({ action: 'reopen' }, e.currentTarget) }, 'Mở lại sự cố');
+
+        // reply / internal note
+        const text = h('textarea', { class: 'field', rows: 2, maxlength: 1000, placeholder: canTellCustomer ? 'Ghi chú nội bộ, hoặc tin nhắn gửi khách' : 'Ghi chú nội bộ (khách không có tài khoản: hãy gọi hoặc nhắn tin)' });
+        const toCustomer = h('input', { type: 'checkbox', id: 'pub-' + code, disabled: !canTellCustomer });
+        const send = h('button', { class: 'btn btn-sm', type: 'button' }, 'Lưu');
+        send.addEventListener('click', async () => {
+          if (!text.value.trim()) { text.focus(); return; }
+          if (await run({ action: 'note', text: text.value, public: toCustomer.checked }, send)) text.value = '';
+        });
+
+        const timeline = h('ol', { class: 'timeline' }, ...c.events.map(e => h('li', { class: 'ev ev-' + e.actor },
+          h('div', { class: 'ev-meta' }, h('b', null, ACTOR[e.actor] || e.actor), ' ', fmtTime.format(toDate(e.at)),
+            e.public ? h('span', { class: 'src src-customer' }, 'Khách thấy') : null),
+          h('div', null, e.text))));
+
+        fill(body,
+          h('div', { class: 'od-top' }, caseBadge(c.status, c.status_label), h('span', { class: 'src src-' + c.source }, c.source === 'customer' ? 'Khách gửi' : 'Shop tạo'), dueLine(c)),
+          h('h3', { class: 'case-title' }, c.type_label, h('span', { class: 'small' }, groupLabel(c.group))),
+          h('div', { class: 'case-grid' },
+            h('div', { class: 'case-main' },
+              request,
+              h('div', { class: 'od-grid', style: 'margin:0' }, orderBox, moneyBox),
+              h('section', null, h('h4', null, 'Các bước xử lý'), checklist),
+              h('section', null, h('div', { class: 'od-cases-head' }, h('h4', null, 'Thao tác'), statusSel),
+                actionButtons.length ? h('div', { class: 'action-row' }, ...actionButtons) : h('p', { class: 'small' }, 'Sự cố đã đóng.'),
+                formBox),
+              h('section', null, h('h4', null, 'Ghi chú và trả lời khách'), text,
+                h('div', { class: 'compose-row' }, h('label', { class: 'check', for: 'pub-' + code }, toCustomer, ' Gửi cho khách xem (hiện trong Tài khoản của khách)'), send))),
+            h('aside', { class: 'case-side' }, h('h4', null, 'Diễn biến'), timeline)));
+      };
+
+      // One small form per action, shown under the buttons.
+      function actionForm(key, box) {
+        const c = current, o = c.order;
+        const note = h('input', { class: 'field', placeholder: 'Ghi chú (không bắt buộc)', maxlength: 1000 });
+        const submit = h('button', { class: 'btn btn-primary btn-sm', type: 'button' }, 'Xác nhận');
+        const cancel = h('button', { class: 'btn btn-sm', type: 'button', onclick: () => { box.hidden = true; box.replaceChildren(); } }, 'Thôi');
+        const amountInput = (value, label) => h('div', { class: 'money' }, h('input', { class: 'field', inputmode: 'numeric', value: value ? VND(value) : '', 'aria-label': label, placeholder: label }));
+        const readAmount = wrap => { const n = parseInt(wrap.querySelector('input').value.replace(/\D/g, ''), 10); return Number.isFinite(n) ? n : 0; };
+        let fields = [], payload = () => ({}), intro = '';
+        const st = o ? o.status : '';
+        if (key === 'approve_cancel') {
+          intro = st === 'shipping' ? 'Đơn đã giao cho ĐVVC: hãy yêu cầu ĐVVC dừng giao trước. Đơn sẽ chuyển sang Giao không thành công và chờ hàng hoàn.'
+            : 'Đơn sẽ bị hủy và các bản đĩa được cộng lại kho.' + (o && ['bank', 'momo', 'zalopay', 'card'].includes(o.payment_method) ? ' Khách đã trả trước: nhớ hoàn tiền.' : '');
+        } else if (['mark_delivered', 'mark_failed', 'mark_lost'].includes(key)) {
+          intro = { mark_delivered: 'Đơn chuyển sang Đã giao.', mark_failed: 'Đơn chuyển sang Giao không thành công (đang chuyển hoàn hoặc chờ giao lại).',
+            mark_lost: 'Đơn chuyển sang Thất lạc. Đĩa không được cộng lại kho.' }[key];
+        } else if (key === 'receive_return') {
+          const damaged = DAMAGED_RETURN_TYPES.includes(c.type);
+          const ok = h('input', { type: 'radio', name: 'rs-' + code, value: '1', checked: !damaged, id: 'rs1-' + code });
+          const bad = h('input', { type: 'radio', name: 'rs-' + code, value: '0', checked: damaged, id: 'rs0-' + code });
+          fields = [h('div', { class: 'radio-col' },
+            h('label', { class: 'check', for: 'rs1-' + code }, ok, ' Đĩa nguyên vẹn, cộng lại kho'),
+            h('label', { class: 'check', for: 'rs0-' + code }, bad, ' Vỡ, hỏng, hộp rỗng hoặc không phải hàng shop: không cộng kho'))];
+          payload = () => ({ restock: ok.checked });
+          intro = 'Đơn chuyển sang Đã trả hàng.';
+        } else if (key === 'reship') {
+          const inputs = o.items.map(i => {
+            const q = h('input', { class: 'field', type: 'number', min: 0, max: i.qty, value: c.type === 'missing_items' ? 0 : i.qty, style: 'width:80px', 'aria-label': 'Số bản gửi lại: ' + i.title });
+            return { i, q, row: h('div', { class: 'reship-row' }, h('span', null, i.title), q, h('span', { class: 'small' }, 'tối đa ' + i.qty)) };
+          });
+          fields = inputs.map(x => x.row);
+          payload = () => ({ items: inputs.map(x => ({ item_id: String(x.i.item_id), qty: parseInt(x.q.value, 10) || 0 })).filter(x => x.qty > 0) });
+          intro = 'Tạo đơn mới 0₫ gửi tới cùng địa chỉ, trừ kho ngay, nằm trong nhóm Cần gửi.';
+        } else if (key === 'refund') {
+          const left = Math.max(0, o.total - o.refunded);
+          const amt = amountInput(left, 'Số tiền hoàn');
+          const method = h('input', { class: 'field', placeholder: 'Cách hoàn: chuyển khoản, Momo…', maxlength: 120 });
+          fields = [amt, method];
+          payload = () => ({ amount: readAmount(amt), method: method.value });
+          intro = 'Còn có thể hoàn tối đa ' + money(left) + '. Ghi nhận sau khi đã chuyển tiền thật cho khách.';
+        } else if (key === 'claim') {
+          const damage = ['delivered_broken', 'empty_box', 'lost_outbound', 'shipper_damaged_lost', 'return_broken', 'return_lost', 'return_empty_box', 'delivered_not_received', 'missing_items'].includes(c.type);
+          const amt = amountInput(c.claimed || (damage && o ? o.subtotal : 0), 'Số tiền yêu cầu bồi thường');
+          const ref = h('input', { class: 'field', placeholder: 'Mã khiếu nại của ĐVVC', maxlength: 80, value: c.carrier_ref || '' });
+          fields = [amt, ref];
+          payload = () => ({ amount: readAmount(amt), carrier_ref: ref.value });
+          intro = 'Sự cố chuyển sang Chờ ĐVVC, hẹn kiểm tra lại sau 7 ngày.';
+        } else if (key === 'compensation') {
+          const amt = amountInput(Math.max(0, c.claimed - c.compensated), 'Số tiền ĐVVC đã bồi thường');
+          fields = [amt];
+          payload = () => ({ amount: readAmount(amt) });
+          intro = 'Ghi nhận khi tiền bồi thường đã vào tài khoản hoặc trừ vào kỳ đối soát.';
+        } else if (key === 'reject') {
+          const why = h('textarea', { class: 'field', rows: 2, maxlength: 1000, placeholder: 'Lý do (khách sẽ thấy), ví dụ: đơn đã giao cho ĐVVC nên không thể hủy' });
+          fields = [why];
+          payload = () => ({ reason: why.value });
+          intro = 'Sự cố đóng lại ở trạng thái Đã từ chối.';
+        } else if (key === 'resolve') {
+          const sum = h('textarea', { class: 'field', rows: 2, maxlength: 1000, placeholder: 'Kết quả xử lý (không bắt buộc)' });
+          const pub = h('input', { type: 'checkbox', id: 'rpub-' + code, disabled: !(o && o.has_account) });
+          fields = [sum, h('label', { class: 'check', for: 'rpub-' + code }, pub, ' Gửi kết quả cho khách xem')];
+          payload = () => ({ summary: sum.value, public: pub.checked });
+          intro = c.steps.length && c.checklist.length < c.steps.length ? 'Còn ' + (c.steps.length - c.checklist.length) + ' bước chưa đánh dấu xong.' : '';
+        }
+        submit.addEventListener('click', async () => {
+          if (await run(Object.assign({ action: key, note: note.value }, payload()), submit)) { box.hidden = true; }
+        });
+        fill(box, h('h5', null, ACTION_TITLE(key)), intro ? h('p', { class: 'small', style: 'margin:0 0 8px' }, intro) : null,
+          ...fields, ['reject', 'resolve'].includes(key) ? null : note,
+          h('div', { class: 'modal-actions', style: 'margin-top:10px' }, cancel, submit));
+        box.hidden = false;
+        const first = box.querySelector('input:not([type=radio]):not([type=checkbox]), textarea');
+        if (first) first.focus();
+      }
+      const ACTION_TITLE = key => (CASEMETA && CASEMETA.actions[key]) || key;
+
+      caseMeta().then(() => api('/cases/' + code)).then(show).catch(e => {
+        if (!STATE.token) { m.close(); return; }
+        fill(body, h('p', { class: 'form-error' }, e.message));
+      });
+    }
+
+    const VIEWS = {
+      home: { open: openHome, reload: loadHome },
+      orders: { open: openOrders, reload: loadOrders },
+      products: { open: openProducts, reload: load },
+      inventory: { open: openInventory, reload: loadInventory },
+      cases: { open: openCases, reload: loadCases }
+    };
+
+    function start() { renderShell(); route(); }
+
+    if (STATE.token) start(); else renderLogin('');
+  })();
+  </script>
+</body>
+</html>
