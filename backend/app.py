@@ -82,6 +82,10 @@ app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None
 # (sessions won't survive a restart) and warn loudly instead of silently
 # using a value that could end up committed to source control.
 _secret_key = os.environ.get("SECRET_KEY") or os.environ.get("FLASK_SECRET_KEY")
+if not _secret_key and database.IS_VERCEL:
+    # Each serverless instance would invent its own key, so carts and logins would
+    # randomly disappear between requests. Fail with a clear message instead.
+    raise RuntimeError("SECRET_KEY must be set in the Vercel project's Environment Variables.")
 if not _secret_key:
     warnings.warn(
         "SECRET_KEY is not set. Using a random throwaway key for this "
@@ -91,7 +95,11 @@ if not _secret_key:
     )
     _secret_key = secrets.token_hex(32)
 
-_cookie_secure = os.environ.get("COOKIE_SECURE", "0") == "1"
+# Vercel always serves over HTTPS.
+_cookie_secure = os.environ.get("COOKIE_SECURE", "1" if database.IS_VERCEL else "0") == "1"
+# Behind Vercel's proxy request.client is the proxy; the real client is in x-forwarded-for,
+# which Vercel overwrites (clients can't spoof it). Elsewhere only trust it when told to.
+_trust_proxy = os.environ.get("TRUST_PROXY", "1" if database.IS_VERCEL else "0") == "1"
 
 # Session cookie storage for the cart, signed the same way Flask's was.
 # max_age=None makes it a real browser-session cookie (no Max-Age/Expires),
@@ -232,9 +240,17 @@ _rl_hits: dict = {}
 _rl_lock = threading.Lock()
 
 
+def client_ip(request: Request):
+    if _trust_proxy:
+        forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+        if forwarded:
+            return forwarded
+    return request.client.host if request.client else "?"
+
+
 def rate_limit(request: Request, bucket: str, limit: int = 20, window: int = 60, key: Optional[str] = None):
     """Allow `limit` hits per `window` seconds, counted per client IP (or per `key`, e.g. an email)."""
-    ident = key if key is not None else (request.client.host if request.client else "?")
+    ident = key if key is not None else client_ip(request)
     slot = (bucket, ident)
     now = time.time()
     with _rl_lock:

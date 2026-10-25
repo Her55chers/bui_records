@@ -39,7 +39,6 @@ python app.py
 - Cửa hàng: http://127.0.0.1:5000
 - Trang quản trị: http://127.0.0.1:5000/admin (đăng nhập bằng `ADMIN_TOKEN`)
 
-Database `backend/bui_records.db` được tạo tự động ở lần chạy đầu.
 
 ## Thêm sản phẩm
 

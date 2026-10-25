@@ -1,0 +1,10 @@
+.env
+backend/bui_records.db
+backend/*.db-journal
+
+.venv/
+**/.venv/
+**/__pycache__/
+*.py[cod]
+
+bui_records_discogs_final/

@@ -12,6 +12,7 @@ Cart state and the logged-in user id are kept in the signed session cookie.
 """
 
 import csv
+import json
 import os
 import re
 import sqlite3
@@ -19,7 +20,14 @@ import sys
 from contextlib import closing, contextmanager
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(HERE, "bui_records.db")
+# Vercel sets VERCEL=1. Its functions can only write to /tmp, which is wiped whenever a new
+# instance starts: there the database is a throwaway demo, refilled from SEED_PATH.
+IS_VERCEL = bool(os.environ.get("VERCEL"))
+DB_PATH = os.environ.get("DB_PATH") or (
+    "/tmp/bui_records.db" if IS_VERCEL else os.path.join(HERE, "bui_records.db")
+)
+SEED_PATH = os.path.join(HERE, "seed_demo.json")
+SEED_DEMO = IS_VERCEL or os.environ.get("SEED_DEMO") == "1"
 
 
 def get_db():
@@ -265,7 +273,31 @@ def init_db():
             """
         )
 
+        if SEED_DEMO and os.path.exists(SEED_PATH) and _is_empty_shop(conn):
+            seed_demo(conn)
+
         conn.commit()
+
+
+def _is_empty_shop(conn):
+    return not conn.execute("SELECT 1 FROM release_prices LIMIT 1").fetchone() and \
+        not conn.execute("SELECT 1 FROM preorders LIMIT 1").fetchone()
+
+
+def seed_demo(conn, path=SEED_PATH):
+    """Fill an empty shop with the demo products + preorders (no customers, no orders)."""
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    for p in data.get("products", []):
+        set_price(conn, p["discogs_release_id"], p.get("price"),
+                  stock_status=p.get("stock_status"), stock=p.get("stock"))
+    for p in data.get("preorders", []):
+        conn.execute(
+            "INSERT INTO preorders (title, artist, ships_label, held, total_slots, price, discogs_release_id) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (p["title"], p["artist"], p["ships_label"], p.get("held", 0), p.get("total_slots", 0),
+             p.get("price"), p.get("discogs_release_id")),
+        )
 
 
 # ---------------------------------------------------------------------------

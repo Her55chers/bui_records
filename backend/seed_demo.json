@@ -1,0 +1,348 @@
+{
+ "products": [
+  {
+   "discogs_release_id": 31381,
+   "price": 1550000,
+   "stock_status": "in_stock",
+   "stock": 1
+  },
+  {
+   "discogs_release_id": 1015465,
+   "price": 700000,
+   "stock_status": "in_stock",
+   "stock": 2
+  },
+  {
+   "discogs_release_id": 1431601,
+   "price": 750000,
+   "stock_status": "in_stock",
+   "stock": 5
+  },
+  {
+   "discogs_release_id": 1559040,
+   "price": 700000,
+   "stock_status": "in_stock",
+   "stock": 5
+  },
+  {
+   "discogs_release_id": 2564538,
+   "price": 750000,
+   "stock_status": "in_stock",
+   "stock": 5
+  },
+  {
+   "discogs_release_id": 2825456,
+   "price": 1250000,
+   "stock_status": "in_stock",
+   "stock": 1
+  },
+  {
+   "discogs_release_id": 7132498,
+   "price": 1500000,
+   "stock_status": "in_stock",
+   "stock": 2
+  },
+  {
+   "discogs_release_id": 7853502,
+   "price": 850000,
+   "stock_status": "in_stock",
+   "stock": 3
+  },
+  {
+   "discogs_release_id": 8664384,
+   "price": 1300000,
+   "stock_status": "in_stock",
+   "stock": 4
+  },
+  {
+   "discogs_release_id": 10028381,
+   "price": 1550000,
+   "stock_status": "in_stock",
+   "stock": 4
+  },
+  {
+   "discogs_release_id": 15611771,
+   "price": 1500000,
+   "stock_status": "in_stock",
+   "stock": 1
+  },
+  {
+   "discogs_release_id": 27345327,
+   "price": 1550000,
+   "stock_status": "in_stock",
+   "stock": 3
+  },
+  {
+   "discogs_release_id": 266650,
+   "price": 700000,
+   "stock_status": "in_stock",
+   "stock": 4
+  },
+  {
+   "discogs_release_id": 57526,
+   "price": 1000000,
+   "stock_status": "in_stock",
+   "stock": 6
+  },
+  {
+   "discogs_release_id": 9796544,
+   "price": 1300000,
+   "stock_status": "in_stock",
+   "stock": 2
+  },
+  {
+   "discogs_release_id": 9287809,
+   "price": 1150000,
+   "stock_status": "in_stock",
+   "stock": 4
+  },
+  {
+   "discogs_release_id": 3196247,
+   "price": 800000,
+   "stock_status": "in_stock",
+   "stock": 5
+  },
+  {
+   "discogs_release_id": 8857632,
+   "price": 1300000,
+   "stock_status": "in_stock",
+   "stock": 4
+  },
+  {
+   "discogs_release_id": 2911293,
+   "price": 1450000,
+   "stock_status": "in_stock",
+   "stock": 4
+  },
+  {
+   "discogs_release_id": 4570366,
+   "price": 1550000,
+   "stock_status": "in_stock",
+   "stock": 3
+  },
+  {
+   "discogs_release_id": 526351,
+   "price": 750000,
+   "stock_status": "in_stock",
+   "stock": 3
+  },
+  {
+   "discogs_release_id": 14186441,
+   "price": 700000,
+   "stock_status": "in_stock",
+   "stock": 1
+  },
+  {
+   "discogs_release_id": 30372812,
+   "price": 2550000,
+   "stock_status": "in_stock",
+   "stock": 5
+  },
+  {
+   "discogs_release_id": 28638091,
+   "price": 1910000,
+   "stock_status": "in_stock",
+   "stock": 3
+  },
+  {
+   "discogs_release_id": 380980,
+   "price": 990000,
+   "stock_status": "in_stock",
+   "stock": 3
+  },
+  {
+   "discogs_release_id": 367135,
+   "price": 1290000,
+   "stock_status": "in_stock",
+   "stock": 3
+  },
+  {
+   "discogs_release_id": 22244899,
+   "price": 1750000,
+   "stock_status": "in_stock",
+   "stock": 3
+  },
+  {
+   "discogs_release_id": 7246691,
+   "price": 1220000,
+   "stock_status": "in_stock",
+   "stock": 2
+  },
+  {
+   "discogs_release_id": 19677331,
+   "price": 1599000,
+   "stock_status": "in_stock",
+   "stock": 3
+  },
+  {
+   "discogs_release_id": 14085554,
+   "price": 1450000,
+   "stock_status": "in_stock",
+   "stock": 2
+  },
+  {
+   "discogs_release_id": 14958500,
+   "price": 1590000,
+   "stock_status": "in_stock",
+   "stock": 3
+  },
+  {
+   "discogs_release_id": 9430347,
+   "price": 1350000,
+   "stock_status": "in_stock",
+   "stock": 3
+  },
+  {
+   "discogs_release_id": 7751175,
+   "price": 1040000,
+   "stock_status": "in_stock",
+   "stock": 3
+  },
+  {
+   "discogs_release_id": 380609,
+   "price": 1100000,
+   "stock_status": "in_stock",
+   "stock": 2
+  },
+  {
+   "discogs_release_id": 495664,
+   "price": 1200000,
+   "stock_status": "in_stock",
+   "stock": 3
+  },
+  {
+   "discogs_release_id": 10410327,
+   "price": 1100000,
+   "stock_status": "in_stock",
+   "stock": 2
+  },
+  {
+   "discogs_release_id": 14312150,
+   "price": 1090000,
+   "stock_status": "in_stock",
+   "stock": 1
+  },
+  {
+   "discogs_release_id": 4904158,
+   "price": 970000,
+   "stock_status": "in_stock",
+   "stock": 5
+  },
+  {
+   "discogs_release_id": 1004089,
+   "price": 970000,
+   "stock_status": "in_stock",
+   "stock": 5
+  },
+  {
+   "discogs_release_id": 4329406,
+   "price": 1030000,
+   "stock_status": "in_stock",
+   "stock": 3
+  },
+  {
+   "discogs_release_id": 14171124,
+   "price": 970000,
+   "stock_status": "in_stock",
+   "stock": 5
+  },
+  {
+   "discogs_release_id": 2917081,
+   "price": 970000,
+   "stock_status": "in_stock",
+   "stock": 3
+  },
+  {
+   "discogs_release_id": 545480,
+   "price": 1060000,
+   "stock_status": "in_stock",
+   "stock": 2
+  },
+  {
+   "discogs_release_id": 1443055,
+   "price": 1260000,
+   "stock_status": "in_stock",
+   "stock": 2
+  },
+  {
+   "discogs_release_id": 803634,
+   "price": 1320000,
+   "stock_status": "in_stock",
+   "stock": 3
+  },
+  {
+   "discogs_release_id": 3430867,
+   "price": 1950000,
+   "stock_status": "in_stock",
+   "stock": 4
+  },
+  {
+   "discogs_release_id": 19506148,
+   "price": 1010000,
+   "stock_status": "in_stock",
+   "stock": 3
+  },
+  {
+   "discogs_release_id": 1544883,
+   "price": 1430000,
+   "stock_status": "in_stock",
+   "stock": 4
+  },
+  {
+   "discogs_release_id": 3354383,
+   "price": 1180000,
+   "stock_status": "in_stock",
+   "stock": 2
+  },
+  {
+   "discogs_release_id": 27604608,
+   "price": 1550000,
+   "stock_status": "in_stock",
+   "stock": 2
+  },
+  {
+   "discogs_release_id": 14820313,
+   "price": 1030000,
+   "stock_status": "in_stock",
+   "stock": 2
+  }
+ ],
+ "preorders": [
+  {
+   "title": "Kind of Blue (Mono Reissue)",
+   "artist": "Miles Davis",
+   "ships_label": "Tháng 11",
+   "held": 34,
+   "total_slots": 50,
+   "price": 1290000,
+   "discogs_release_id": 7606066
+  },
+  {
+   "title": "Rumours (45RPM Box)",
+   "artist": "Fleetwood Mac",
+   "ships_label": "Tháng 12",
+   "held": 18,
+   "total_slots": 40,
+   "price": 2450000,
+   "discogs_release_id": 22040284
+  },
+  {
+   "title": "In Rainbows (Deluxe)",
+   "artist": "Radiohead",
+   "ships_label": "Tháng 11",
+   "held": 30,
+   "total_slots": 30,
+   "price": 1850000,
+   "discogs_release_id": 1174296
+  },
+  {
+   "title": "Hà Nội Nhớ",
+   "artist": "Khánh Ly",
+   "ships_label": "Quý 1/2027",
+   "held": 6,
+   "total_slots": 60,
+   "price": 890000,
+   "discogs_release_id": 9796544
+  }
+ ]
+}
